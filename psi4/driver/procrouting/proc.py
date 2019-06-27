@@ -998,7 +998,7 @@ def build_disp_functor(name, restricted, **kwargs):
     superfunc, disp_type = dft.build_superfunctional(name, restricted)
 
     if disp_type:
-        if isinstance(name, dict):
+        if isinstance(name, dict) or (disp_type['type'] == 'xdm'): ## hack ##
             # user dft_functional={} spec - type for lookup, dict val for param defs,
             #   name & citation discarded so only param matches to existing defs will print labels
             _disp_functor = empirical_dispersion.EmpiricalDispersion(
@@ -1023,7 +1023,6 @@ def build_disp_functor(name, restricted, **kwargs):
 
     else:
         return superfunc, None
-
 
 def scf_wavefunction_factory(name, ref_wfn, reference, **kwargs):
     """Builds the correct (R/U/RO/CU HF/KS) wavefunction from the

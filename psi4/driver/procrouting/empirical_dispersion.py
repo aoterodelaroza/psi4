@@ -42,6 +42,7 @@ _engine_can_do = collections.OrderedDict([('libdisp', ['d1', 'd2', 'chg', 'das20
                                           ('dftd3', ['d2', 'd3zero', 'd3bj', 'd3mzero', 'd3mbj']),
                                           ('nl', ['nl']),
                                           ('mp2d', ['dmp2']),
+                                          ('xdm', ['xdm']),
                                         ]) # yapf: disable
 
 _capable_engines_for_disp = collections.defaultdict(list)
@@ -123,18 +124,27 @@ class EmpiricalDispersion(object):
         from .dft import dashcoeff_supplement
         self.dashcoeff_supplement = dashcoeff_supplement
 
-        resolved = qcng.programs.empirical_dispersion_resources.from_arrays(
-            name_hint=name_hint,
-            level_hint=level_hint,
-            param_tweaks=param_tweaks,
-            dashcoeff_supplement=self.dashcoeff_supplement)
-        self.fctldash = resolved['fctldash']
-        self.dashlevel = resolved['dashlevel']
-        self.dashparams = resolved['dashparams']
-        self.description = qcng.programs.empirical_dispersion_resources.dashcoeff[self.dashlevel]['description']
-        self.ordered_params = qcng.programs.empirical_dispersion_resources.dashcoeff[self.dashlevel]['default'].keys()
-        self.dashlevel_citation = qcng.programs.empirical_dispersion_resources.dashcoeff[self.dashlevel]['citation']
-        self.dashparams_citation = resolved['dashparams_citation']
+        if level_hint == 'xdm': ## hack ##
+            self.fctldash = ""
+            self.dashlevel = level_hint.lower()
+            self.dashparams = param_tweaks
+            self.description = 'Exchange-hole dipole moment (XDM) model dispersion correction'
+            self.ordered_params = param_tweaks.keys()
+            self.dashlevel_citation = 'A. D. Becke, E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n'
+            self.dashparams_citation = 'A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n'
+        else:
+            resolved = qcng.programs.empirical_dispersion_resources.from_arrays(
+                name_hint=name_hint,
+                level_hint=level_hint,
+                param_tweaks=param_tweaks,
+                dashcoeff_supplement=self.dashcoeff_supplement)
+            self.fctldash = resolved['fctldash']
+            self.dashlevel = resolved['dashlevel']
+            self.dashparams = resolved['dashparams']
+            self.description = qcng.programs.empirical_dispersion_resources.dashcoeff[self.dashlevel]['description']
+            self.ordered_params = qcng.programs.empirical_dispersion_resources.dashcoeff[self.dashlevel]['default'].keys()
+            self.dashlevel_citation = qcng.programs.empirical_dispersion_resources.dashcoeff[self.dashlevel]['citation']
+            self.dashparams_citation = resolved['dashparams_citation']
 
         engine = kwargs.pop('engine', None)
         if engine is None:
@@ -147,6 +157,8 @@ class EmpiricalDispersion(object):
 
         if self.engine == 'libdisp':
             self.disp = core.Dispersion.build(self.dashlevel, **resolved['dashparams'])
+        elif self.engine == 'xdm':
+            self.disp = core.Dispersion.build("d2", 1.25, 20.0, 1.1)
 
     def print_out(self):
         """Format dispersion parameters of `self` for output file."""

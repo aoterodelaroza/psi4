@@ -40,6 +40,7 @@
 #include "psi4/libfock/cubature.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libsapt_solver/fdds_disp.h"
+#include "psi4/libxdm/xdm_dispersion.h"
 #include "psi4/libqt/qt.h"
 #include "psi4/libpsi4util/process.h"
 
@@ -292,6 +293,31 @@ void export_functional(py::module &m) {
         .def("a1", &Dispersion::get_a1, "docstring")
         .def("a2", &Dispersion::get_a2, "docstring")
         .def("print_out", &Dispersion::py_print, "docstring");
+
+    py::class_<XDMDispersion, std::shared_ptr<XDMDispersion>>(m, "XDMDispersion", "docstring")
+        .def_static("build", &XDMDispersion::build, "type"_a, "s6"_a = 0.0, "alpha6"_a = 0.0, "sr6"_a = 0.0,
+                    "Initialize instance capable of computing a dispersion correction of *type*")
+        .def("name", &XDMDispersion::name, "docstring")
+        .def("description", &XDMDispersion::description, "docstring")
+        .def("citation", &XDMDispersion::citation, "docstring")
+        .def("bibtex", &XDMDispersion::bibtex, "Get the BibTeX key for the literature reference.")
+        .def("set_name", &XDMDispersion::set_name, "docstring")
+        .def("set_description", &XDMDispersion::set_description, "docstring")
+        .def("set_citation", &XDMDispersion::set_citation, "docstring")
+        .def("set_bibtex", &XDMDispersion::set_bibtex, "Set the BibTeX key for the literature reference.")
+        .def("print_energy", &XDMDispersion::print_energy, "docstring")
+        .def("print_gradient", &XDMDispersion::print_gradient, "docstring")
+        .def("print_hessian", &XDMDispersion::print_hessian, "docstring")
+        .def("compute_energy", &XDMDispersion::compute_energy, "docstring")
+        .def("compute_gradient", &XDMDispersion::compute_gradient, "docstring")
+        .def("compute_hessian", &XDMDispersion::compute_hessian, "docstring")
+        .def("d", &XDMDispersion::get_d, "docstring")
+        .def("s6", &XDMDispersion::get_s6, "docstring")
+        .def("sr6", &XDMDispersion::get_sr6, "docstring")
+        .def("s8", &XDMDispersion::get_s8, "docstring")
+        .def("a1", &XDMDispersion::get_a1, "docstring")
+        .def("a2", &XDMDispersion::get_a2, "docstring")
+        .def("print_out", &XDMDispersion::py_print, "docstring");
 
     py::class_<sapt::FDDS_Dispersion, std::shared_ptr<sapt::FDDS_Dispersion>>(m, "FDDS_Dispersion", "docstring")
         .def(py::init<std::shared_ptr<BasisSet>, std::shared_ptr<BasisSet>, std::map<std::string, SharedMatrix>,

@@ -46,7 +46,7 @@ funcs.append({
     "description":
     '    BLYP GGA Exchange-Correlation Functional plus XDM dispersion.\n',
     "dispersion": {
-        "type": "d2",
+        "type": "xdm",
         "params": {
             's6': 1.25,
             'alpha6': 20.0,

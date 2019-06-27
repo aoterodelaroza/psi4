@@ -158,7 +158,7 @@ class EmpiricalDispersion(object):
         if self.engine == 'libdisp':
             self.disp = core.Dispersion.build(self.dashlevel, **resolved['dashparams'])
         elif self.engine == 'xdm':
-            self.disp = core.Dispersion.build("d2", 1.25, 20.0, 1.1)
+            self.disp = core.XDMDispersion.build("d2", 1.25, 20.0, 1.1)
 
     def print_out(self):
         """Format dispersion parameters of `self` for output file."""

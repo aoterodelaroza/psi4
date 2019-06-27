@@ -92,6 +92,7 @@ from . import gga_functionals
 from . import mgga_functionals
 from . import hyb_functionals
 from . import dh_functionals
+from . import xdm_functionals
 
 dict_functionals = {}
 dict_functionals.update(libxc_functionals.functional_list)
@@ -100,7 +101,7 @@ dict_functionals.update(gga_functionals.functional_list)
 dict_functionals.update(mgga_functionals.functional_list)
 dict_functionals.update(hyb_functionals.functional_list)
 dict_functionals.update(dh_functionals.functional_list)
-
+dict_functionals.update(xdm_functionals.functional_list)
 
 def get_functional_aliases(functional_dict):
     if "alias" in functional_dict:

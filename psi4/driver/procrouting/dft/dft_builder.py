@@ -234,7 +234,7 @@ def check_consistency(func_dictionary):
         if "type" not in disp or disp["type"] not in _dispersion_aliases:
             raise ValidationError("SCF: Dispersion type ({}) should be among ({})".format(disp['type'], _dispersion_aliases.keys()))
     # 3c) check dispersion params complete
-        if _dispersion_aliases[disp["type"]] in dashcoeff:
+        if _dispersion_aliases[disp["type"]] in dashcoeff: ## hack ##
             allowed_params = sorted(dashcoeff[_dispersion_aliases[disp["type"]]]["default"].keys())
             if "params" not in disp or sorted(disp["params"].keys()) != allowed_params:
                 raise ValidationError("SCF: Dispersion params ({}) must include all ({})".format(list(disp['params'].keys()), allowed_params))

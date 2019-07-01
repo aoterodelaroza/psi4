@@ -71,6 +71,10 @@ void SuperFunctional::common_init() {
     vv10_c_ = 0.0;
     vv10_beta_ = 0.0;
 
+    needs_xdm_ = false;
+    xdm_a1_ = 0.0;
+    xdm_a2_ = 0.0;
+
     libxc_xc_func_ = false;
     locked_ = false;
 }
@@ -97,6 +101,10 @@ std::shared_ptr<SuperFunctional> SuperFunctional::XC_build(std::string name, boo
     if (xc_func->needs_vv10()) {
         sup->set_vv10_b(xc_func->vv10_b());
         sup->set_vv10_c(xc_func->vv10_c());
+    }
+    if (xc_func->needs_xdm()) {
+        sup->set_xdm_a1(xc_func->xdm_a1());
+        sup->set_xdm_a2(xc_func->xdm_a2());
     }
     sup->add_c_functional(static_cast<std::shared_ptr<Functional>>(xc_func));
     sup->libxc_xc_func_ = true;
@@ -125,6 +133,11 @@ std::shared_ptr<SuperFunctional> SuperFunctional::build_worker() {
         sup->vv10_b_ = vv10_b_;
         sup->vv10_c_ = vv10_c_;
         sup->vv10_beta_ = vv10_beta_;
+    }
+    if (needs_xdm_) {
+        sup->needs_xdm_ = true;
+        sup->xdm_a1_ = xdm_a1_;
+        sup->xdm_a2_ = xdm_a2_;
     }
     if (needs_grac_) {
         sup->needs_grac_ = true;
@@ -296,6 +309,13 @@ void SuperFunctional::print(std::string out, int level) const {
         printer->Printf("\n");
     }
 
+    if (needs_xdm_) {
+        printer->Printf("   => XDM Dispersion Correction Parameters <=\n\n");
+        printer->Printf("    XDM a1              = %14.4E\n", xdm_a1_);
+        printer->Printf("    XDM a2 (ang)        = %14.4E\n", xdm_a2_);
+        printer->Printf("\n");
+    }
+
     if (level > 1) {
         for (int i = 0; i < x_functionals_.size(); i++) {
             x_functionals_[i]->print(out, level);
@@ -348,6 +368,16 @@ void SuperFunctional::set_vv10_c(double vv10_c) {
     can_edit();
     needs_vv10_ = true;
     vv10_c_ = vv10_c;
+}
+void SuperFunctional::set_xdm_a1(double xdm_a1) {
+    can_edit();
+    needs_xdm_ = true;
+    xdm_a1_ = xdm_a1;
+}
+void SuperFunctional::set_xdm_a2(double xdm_a2) {
+    can_edit();
+    needs_xdm_ = true;
+    xdm_a2_ = xdm_a2;
 }
 void SuperFunctional::set_grac_alpha(double grac_alpha) {
     can_edit();
@@ -579,6 +609,14 @@ void SuperFunctional::allocate() {
         vv_values_["GRID_WX"] = std::make_shared<Vector>("W_X_GRID", max_points_);
         vv_values_["GRID_WY"] = std::make_shared<Vector>("W_Y_GRID", max_points_);
         vv_values_["GRID_WZ"] = std::make_shared<Vector>("W_Z_GRID", max_points_);
+    }
+
+    if (needs_xdm_) {
+        xdm_values_["W0"] = std::make_shared<Vector>("W0", max_points_);
+        xdm_values_["KAPPA"] = std::make_shared<Vector>("KAPPA", max_points_);
+        xdm_values_["GRID_WX"] = std::make_shared<Vector>("W_X_GRID", max_points_);
+        xdm_values_["GRID_WY"] = std::make_shared<Vector>("W_Y_GRID", max_points_);
+        xdm_values_["GRID_WZ"] = std::make_shared<Vector>("W_Z_GRID", max_points_);
     }
 }
 std::map<std::string, SharedVector>& SuperFunctional::compute_functional(

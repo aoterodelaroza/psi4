@@ -48,9 +48,8 @@ funcs.append({
     "dispersion": {
         "type": "xdm",
         "params": {
-            's6': 1.25,
-            'alpha6': 20.0,
-            'sr6': 1.1
+            'a1': 0.7647,
+            'a2': 0.8457,
         }
     }
 })

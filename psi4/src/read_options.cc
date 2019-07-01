@@ -1534,6 +1534,10 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         options.add_double("DFT_VV10_B", 0.0);
         /*- Define VV10 parameter C -*/
         options.add_double("DFT_VV10_C", 0.0);
+        /*- Define XDM parameter a1 -*/
+        options.add_double("DFT_XDM_A1", 0.0);
+        /*- Define XDM parameter a2 -*/
+        options.add_double("DFT_XDM_A2", 0.0);
         /*- post-scf VV10 correction -*/
         options.add_bool("DFT_VV10_POSTSCF", false);
         /*- The convergence on the orbital localization procedure -*/

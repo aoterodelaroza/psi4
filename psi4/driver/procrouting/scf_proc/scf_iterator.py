@@ -30,6 +30,7 @@ The SCF iteration functions
 """
 
 import numpy as np
+import sys
 
 from psi4.driver import p4util
 from psi4.driver import constants
@@ -543,6 +544,17 @@ def scf_finalize_energy(self):
         self.set_variable('EFP EXCH ENERGY', efpene['exchange_repulsion'])
         self.set_variable('EFP TOTAL ENERGY', efpene['total'])
         self.set_variable('CURRENT ENERGY', efpene['total'])
+
+    if hasattr(self, "_disp_functor") and self._disp_functor.dashlevel == "xdm":
+        disp = self._disp_functor
+        print(disp)
+        exdm = disp.compute_energy(self.molecule())
+        self.set_energies("EXDM", exdm)
+        core.set_variable('DISPERSION CORRECTION ENERGY', exdm)
+
+        SCFE = self.get_energies("Total Energy")
+        SCFE += exdm
+        self.set_energies("Total Energy", SCFE)
 
     core.print_out("\n  ==> Post-Iterations <==\n\n")
 

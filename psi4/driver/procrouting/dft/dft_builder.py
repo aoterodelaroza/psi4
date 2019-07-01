@@ -82,6 +82,7 @@ from psi4.driver.p4util.exceptions import ValidationError
 
 import copy
 import collections
+import sys
 
 import qcengine as qcng
 from qcengine.programs.empirical_dispersion_resources import dashcoeff
@@ -395,6 +396,9 @@ def build_superfunctional_from_dictionary(func_dictionary, npoints, deriv, restr
         if d_params["type"] == 'nl':
             sup.set_vv10_b(d_params["params"]["b"])
             sup.set_vv10_c(d_params["params"]["c"])
+        if d_params["type"] == 'xdm':
+            sup.set_xdm_a1(d_params["params"]["a1"])
+            sup.set_xdm_a2(d_params["params"]["a2"])
         dispersion = d_params
 
     sup.set_max_points(npoints)

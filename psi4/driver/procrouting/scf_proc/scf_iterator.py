@@ -545,9 +545,8 @@ def scf_finalize_energy(self):
         self.set_variable('EFP TOTAL ENERGY', efpene['total'])
         self.set_variable('CURRENT ENERGY', efpene['total'])
 
-    if hasattr(self, "_disp_functor") and self._disp_functor.dashlevel == "xdm":
-        disp = self._disp_functor
-        exdm = disp.compute_energy(self.molecule())
+    if self.functional().needs_xdm():
+        exdm = self.xdm.compute_energy(self.molecule())
         self.set_energies("EXDM", exdm)
         core.set_variable('DISPERSION CORRECTION ENERGY', exdm)
 

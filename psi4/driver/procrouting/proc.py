@@ -998,8 +998,8 @@ def build_disp_functor(name, restricted, **kwargs):
     # Figure out functional
     superfunc, disp_type = dft.build_superfunctional(name, restricted)
 
-    if disp_type:
-        if isinstance(name, dict) or (disp_type['type'] == 'xdm'): ## hack ##
+    if disp_type and (disp_type['type'] != 'xdm'):
+        if isinstance(name, dict):
             # user dft_functional={} spec - type for lookup, dict val for param defs,
             #   name & citation discarded so only param matches to existing defs will print labels
             _disp_functor = empirical_dispersion.EmpiricalDispersion(
@@ -1049,6 +1049,9 @@ def scf_wavefunction_factory(name, ref_wfn, reference, **kwargs):
 
     if _disp_functor and _disp_functor.engine != 'nl':
         wfn._disp_functor = _disp_functor
+
+    if superfunc.needs_xdm():
+        wfn.xdm = core.XDMDispersion.build(superfunc.xdm_a1(),superfunc.xdm_a2())
 
     # Set the DF basis sets
     if (("DF" in core.get_global_option("SCF_TYPE")) or
@@ -1257,7 +1260,7 @@ def scf_helper(name, post_scf=True, **kwargs):
         core.set_legacy_wavefunction(ref_wfn)
 
         # Compute dftd3
-        if hasattr(ref_wfn, "_disp_functor") and ref_wfn._disp_functor.dashlevel != "xdm":
+        if hasattr(ref_wfn, "_disp_functor"):
             disp_energy = ref_wfn._disp_functor.compute_energy(ref_wfn.molecule())
             ref_wfn.set_variable("-D Energy", disp_energy)
         ref_wfn.compute_energy()
@@ -1360,7 +1363,7 @@ def scf_helper(name, post_scf=True, **kwargs):
         scf_wfn.basisset().print_detail_out()
 
     # Compute dftd3
-    if hasattr(scf_wfn, "_disp_functor") and scf_wfn._disp_functor.dashlevel != "xdm":
+    if hasattr(scf_wfn, "_disp_functor"):
         disp_energy = scf_wfn._disp_functor.compute_energy(scf_wfn.molecule(), scf_wfn)
         scf_wfn.set_variable("-D Energy", disp_energy)
 
@@ -2155,7 +2158,7 @@ def run_scf_gradient(name, **kwargs):
     if core.get_option('SCF', 'REFERENCE') in ['ROHF', 'CUHF']:
         ref_wfn.semicanonicalize()
 
-    if hasattr(ref_wfn, "_disp_functor") and ref_wfn._disp_functor.dashlevel != "xdm":
+    if hasattr(ref_wfn, "_disp_functor"):
         disp_grad = ref_wfn._disp_functor.compute_gradient(ref_wfn.molecule(), ref_wfn)
         ref_wfn.set_variable("-D Gradient", disp_grad)
 
@@ -2223,7 +2226,7 @@ def run_scf_hessian(name, **kwargs):
     if badref or badint:
         raise ValidationError("Only RHF Hessians are currently implemented. SCF_TYPE either CD or OUT_OF_CORE not supported")
 
-    if hasattr(ref_wfn, "_disp_functor") and ref_wfn._disp_functor.dashlevel != "xdm":
+    if hasattr(ref_wfn, "_disp_functor"):
         disp_hess = ref_wfn._disp_functor.compute_hessian(ref_wfn.molecule(), ref_wfn)
         ref_wfn.set_variable("-D Hessian", disp_hess)
 

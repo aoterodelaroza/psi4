@@ -639,7 +639,7 @@ def scf_print_energies(self):
     epcm = self.get_energies('PCM Polarization')
 
     hf_energy = enuc + e1 + e2
-    dft_energy = hf_energy + exc + ed + evv10
+    dft_energy = hf_energy + exc + ed + evv10 + exdm
     total_energy = dft_energy + eefp + epcm
 
     core.print_out("   => Energetics <=\n\n")

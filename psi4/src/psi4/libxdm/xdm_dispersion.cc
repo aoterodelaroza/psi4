@@ -146,7 +146,7 @@ namespace psi {
   }
 
   double XDMDispersion::compute_energy(std::shared_ptr<Molecule> m) {
-    double E = -1.0;
+    double E = -100000.0;
 
     outfile->Printf("\nxxxx in routine compute_energy\n");
     return E;

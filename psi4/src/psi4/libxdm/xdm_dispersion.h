@@ -50,7 +50,7 @@ namespace psi {
 
   public:
     XDMDispersion();
-    virtual ~XDMDispersion();
+    ~XDMDispersion();
 
     static std::shared_ptr<XDMDispersion> build(double a1 = 0.0, double a2 = 0.0);
 
@@ -64,11 +64,11 @@ namespace psi {
     std::string print_gradient(std::shared_ptr<Molecule> m);
     std::string print_hessian(std::shared_ptr<Molecule> m);
 
-    virtual double compute_energy(std::shared_ptr<scf::HF> hf);
-    virtual SharedMatrix compute_gradient(std::shared_ptr<Molecule> m);
-    virtual SharedMatrix compute_hessian(std::shared_ptr<Molecule> m);
+    double compute_energy(std::shared_ptr<scf::HF> hf);
+    SharedMatrix compute_gradient(std::shared_ptr<Molecule> m);
+    SharedMatrix compute_hessian(std::shared_ptr<Molecule> m);
 
-    virtual void print(std::string out_fname = "outfile", int level = 1) const;
+    void print(std::string out_fname = "outfile", int level = 1) const;
     void py_print() const { print("outfile", 1); }
   };
 }

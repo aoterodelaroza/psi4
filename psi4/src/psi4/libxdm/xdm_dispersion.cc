@@ -231,12 +231,18 @@ namespace psi {
         double* z = block->z();
         double* w = block->w();
         double* rho_a = pworker->point_value("RHO_A")->pointer();
+        double* lap_a = pworker->point_value("LAPL_RHO_A")->pointer();
+        double* grho2_a = pworker->point_value("GAMMA_AA")->pointer();
+        double* tau_a = pworker->point_value("TAU_A")->pointer();
+
         // printf("I am in block %zu with %zu points\n",Q,npoints);
-        for (int i=0; i<npoints; i++){
-          rhosum += w[i] * rho_a[i];
-        }
+        // for (int i=0; i<npoints; i++){
+        //   printf("%.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+        //          x[i],y[i],z[i],rho_a[i],lap_a[i],grho2_a[i],tau_a[i]);
+        //   rhosum += w[i] * rho_a[i];
+        // }
     }
-    printf("rho_sum = %.10f\n",rhosum);
+    // printf("rho_sum = %.10f\n",rhosum);
 
     // printf("molecule\n");
     // for (int i=0; i<hf->molecule()->natom(); i++){
@@ -244,8 +250,8 @@ namespace psi {
     //          hf->molecule()->x(i),hf->molecule()->y(i),hf->molecule()->z(i));
     // }
 
-    printf("done!\n");
-    exit(0);
+    // printf("done!\n");
+    // exit(0);
 
     // // how is the exc calculated? (v.cc)
     // for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {

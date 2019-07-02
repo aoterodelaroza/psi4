@@ -142,6 +142,7 @@ void RKSFunctions::allocate() {
         point_values_["RHO_YY"] = std::make_shared<Vector>("RHO_YY", max_points_);
         point_values_["RHO_ZZ"] = std::make_shared<Vector>("RHO_ZZ", max_points_);
         point_values_["TAU_A"] = std::make_shared<Vector>("TAU_A", max_points_);
+        point_values_["LAPL_RHO_A"] = std::make_shared<Vector>("LAPL_RHO_A", max_points_);
     }
     build_temps();
 }
@@ -241,49 +242,48 @@ void RKSFunctions::compute_points(std::shared_ptr<BlockOPoints> block, bool forc
             }
         }
 
-        // Kinetic terms
-        // double** phixxp = basis_value("PHI_XX")->pointer();
-        // double** phixyp = basis_value("PHI_XY")->pointer();
-        // double** phixzp = basis_value("PHI_XZ")->pointer();
-        // double** phiyyp = basis_value("PHI_YY")->pointer();
-        // double** phiyzp = basis_value("PHI_YZ")->pointer();
-        // double** phizzp = basis_value("PHI_ZZ")->pointer();
+        double** phixxp = basis_value("PHI_XX")->pointer();
+        double** phixyp = basis_value("PHI_XY")->pointer();
+        double** phixzp = basis_value("PHI_XZ")->pointer();
+        double** phiyyp = basis_value("PHI_YY")->pointer();
+        double** phiyzp = basis_value("PHI_YZ")->pointer();
+        double** phizzp = basis_value("PHI_ZZ")->pointer();
 
-        // double* rhoxxp = point_values_["RHO_XX"]->pointer();
-        // double* rhoyyp = point_values_["RHO_YY"]->pointer();
-        // double* rhozzp = point_values_["RHO_ZZ"]->pointer();
+        double* rhoxxp = point_values_["RHO_XX"]->pointer();
+        double* rhoyyp = point_values_["RHO_YY"]->pointer();
+        double* rhozzp = point_values_["RHO_ZZ"]->pointer();
 
-        // double* laplp = point_values_["LAPL_RHO_A"]->pointer();
+        double* laplp = point_values_["LAPL_RHO_A"]->pointer();
 
-        // // Diagonal terms phi^xx_a D_ab phi_b
-        // for (int P = 0; P < npoints; P++) {
-        //      rhoxxp[P] = 2.0 * C_DDOT(nlocal,phixxp[P],1,Tp[P],1);
-        //      rhoyyp[P] = 2.0 * C_DDOT(nlocal,phiyyp[P],1,Tp[P],1);
-        //      rhozzp[P] = 2.0 * C_DDOT(nlocal,phizzp[P],1,Tp[P],1);
-        // }
+        // Diagonal terms phi^xx_a D_ab phi_b
+        for (int P = 0; P < npoints; P++) {
+          rhoxxp[P] = 2.0 * C_DDOT(nlocal,phixxp[P],1,Tp[P],1);
+          rhoyyp[P] = 2.0 * C_DDOT(nlocal,phiyyp[P],1,Tp[P],1);
+          rhozzp[P] = 2.0 * C_DDOT(nlocal,phizzp[P],1,Tp[P],1);
+        }
 
-        // // Cross terms phi^x_a D_ab phi^x_b
-        // C_DGEMM('N','N',npoints,nlocal,nlocal,1.0,phixp[0],coll_funcs,D2p[0],nglobal,0.0,Tp[0],nglobal);
-        // for (int P = 0; P < npoints; P++) {
-        //      rhoxxp[P] += 2.0 * C_DDOT(nlocal,phixp[P],1,Tp[P],1);
-        // }
+        // Cross terms phi^x_a D_ab phi^x_b
+        C_DGEMM('N','N',npoints,nlocal,nlocal,1.0,phixp[0],coll_funcs,D2p[0],nglobal,0.0,Tp[0],nglobal);
+        for (int P = 0; P < npoints; P++) {
+          rhoxxp[P] += 2.0 * C_DDOT(nlocal,phixp[P],1,Tp[P],1);
+        }
 
-        // C_DGEMM('N','N',npoints,nlocal,nlocal,1.0,phiyp[0],coll_funcs,D2p[0],nglobal,0.0,Tp[0],nglobal);
-        // for (int P = 0; P < npoints; P++) {
-        //      rhoyyp[P] += 2.0 * C_DDOT(nlocal,phiyp[P],1,Tp[P],1);
-        // }
+        C_DGEMM('N','N',npoints,nlocal,nlocal,1.0,phiyp[0],coll_funcs,D2p[0],nglobal,0.0,Tp[0],nglobal);
+        for (int P = 0; P < npoints; P++) {
+          rhoyyp[P] += 2.0 * C_DDOT(nlocal,phiyp[P],1,Tp[P],1);
+        }
 
-        // C_DGEMM('N','N',npoints,nlocal,nlocal,1.0,phizp[0],coll_funcs,D2p[0],nglobal,0.0,Tp[0],nglobal);
-        // for (int P = 0; P < npoints; P++) {
-        //      rhozzp[P] += 2.0 * C_DDOT(nlocal,phizp[P],1,Tp[P],1);
-        // }
+        C_DGEMM('N','N',npoints,nlocal,nlocal,1.0,phizp[0],coll_funcs,D2p[0],nglobal,0.0,Tp[0],nglobal);
+        for (int P = 0; P < npoints; P++) {
+          rhozzp[P] += 2.0 * C_DDOT(nlocal,phizp[P],1,Tp[P],1);
+        }
 
-        // // Put it together
-        // for (int P = 0; P < npoints; P++) {
-        //     laplp[P]  = rhoxxp[P];
-        //     laplp[P] += rhoyyp[P];
-        //     laplp[P] += rhozzp[P];
-        // }
+        // Put it together
+        for (int P = 0; P < npoints; P++) {
+          laplp[P]  = rhoxxp[P];
+          laplp[P] += rhoyyp[P];
+          laplp[P] += rhozzp[P];
+        }
     }
 }
 

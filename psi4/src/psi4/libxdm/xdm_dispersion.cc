@@ -40,16 +40,9 @@
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
-#include "psi4/libpsi4util/libpsi4util.h"
 #include "xdm_dispersion.h"
 
-#include <iostream>
 #include <iomanip>
-#include <cstdlib>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <memory>
 
 namespace psi {
 
@@ -59,6 +52,7 @@ namespace psi {
 
   std::shared_ptr<XDMDispersion> XDMDispersion::build(double a1, double a2) {
     auto disp = std::make_shared<XDMDispersion>();
+    outfile->Printf("\nxxxx in routine build\n");
     disp->a1_ = a1;
     disp->a2_ = a2;
     return disp;
@@ -67,6 +61,7 @@ namespace psi {
   void XDMDispersion::print(std::string out, int level) const {
     if (level < 1) return;
     std::shared_ptr<psi::PsiOutStream> printer = (out == "outfile" ? outfile : std::make_shared<PsiOutStream>(out));
+    outfile->Printf("\nxxxx in routine print\n");
     printer->Printf("   => XDM Dispersion <=\n\n");
 
     printer->Printf("XDM dispersion");
@@ -87,6 +82,7 @@ namespace psi {
 
     s << "   " << " XDMDispersion Energy: " << e << " [Eh]" << std::endl;
 
+    outfile->Printf("\nxxxx in routine print_energy\n");
     return s.str();
   }
 
@@ -109,6 +105,7 @@ namespace psi {
         std::setw(20) << g[(k - 1) * 3 + 2] << std::endl;
       // clang-format on
     }
+    outfile->Printf("\nxxxx in routine print_gradient\n");
     return s.str();
   }
 
@@ -144,17 +141,14 @@ namespace psi {
             // clang-format on
         }
     }
+    outfile->Printf("\nxxxx in routine print_hessian\n");
     return s.str();
   }
 
   double XDMDispersion::compute_energy(std::shared_ptr<Molecule> m) {
     double E = -1.0;
 
-    printf("xxxx XDM's compute_energy has been called! xxxx\n");
-    printf("xxxx with a1 = %.4f\n",a1_);
-    printf("xxxx with a2 = %.4f\n",a2_);
-    printf("xxxx for now, returning an energy of 1 Hartree\n");
-
+    outfile->Printf("\nxxxx in routine compute_energy\n");
     return E;
   }
 
@@ -168,10 +162,12 @@ namespace psi {
         }
     }
 
+    outfile->Printf("\nxxxx in routine compute_gradient\n");
     return G;
   }
 
   SharedMatrix XDMDispersion::compute_hessian(std::shared_ptr<Molecule> m) {
+    outfile->Printf("\nxxxx in routine compute_hessian\n");
     throw PSIEXCEPTION("XDMDispersion: Hessians not implemented");
   }
 

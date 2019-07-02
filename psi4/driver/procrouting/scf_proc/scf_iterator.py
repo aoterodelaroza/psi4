@@ -547,7 +547,6 @@ def scf_finalize_energy(self):
 
     if hasattr(self, "_disp_functor") and self._disp_functor.dashlevel == "xdm":
         disp = self._disp_functor
-        print(disp)
         exdm = disp.compute_energy(self.molecule())
         self.set_energies("EXDM", exdm)
         core.set_variable('DISPERSION CORRECTION ENERGY', exdm)
@@ -635,6 +634,7 @@ def scf_print_energies(self):
     ed = self.get_energies('-D')
     self.del_variable('-D Energy')
     evv10 = self.get_energies('VV10')
+    exdm = self.get_energies('EXDM')
     eefp = self.get_energies('EFP')
     epcm = self.get_energies('PCM Polarization')
 
@@ -650,6 +650,8 @@ def scf_print_energies(self):
         core.print_out("    DFT Exchange-Correlation Energy = {:24.16f}\n".format(exc))
         core.print_out("    Empirical Dispersion Energy =     {:24.16f}\n".format(ed))
         core.print_out("    VV10 Nonlocal Energy =            {:24.16f}\n".format(evv10))
+        if self.functional().needs_xdm():
+            core.print_out("    XDM Dispersion Energy =            {:24.16f}\n".format(exdm))
     if core.get_option('SCF', 'PCM'):
         core.print_out("    PCM Polarization Energy =         {:24.16f}\n".format(epcm))
     if hasattr(self.molecule(), 'EFP'):

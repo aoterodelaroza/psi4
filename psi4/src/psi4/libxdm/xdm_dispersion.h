@@ -36,6 +36,7 @@
  * Based on the dispersion code by Robert Parrish <robparrish@gmail.com>
  ***********************************************************/
 #include "psi4/psi4-dec.h"
+#include "psi4/libscf_solver/hf.h"
 #include <string>
 
 namespace psi {
@@ -63,7 +64,7 @@ namespace psi {
     std::string print_gradient(std::shared_ptr<Molecule> m);
     std::string print_hessian(std::shared_ptr<Molecule> m);
 
-    virtual double compute_energy(std::shared_ptr<Molecule> m);
+    virtual double compute_energy(std::shared_ptr<scf::HF> hf);
     virtual SharedMatrix compute_gradient(std::shared_ptr<Molecule> m);
     virtual SharedMatrix compute_hessian(std::shared_ptr<Molecule> m);
 

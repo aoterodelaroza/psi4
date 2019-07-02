@@ -32,6 +32,7 @@ chemical methods.
 from . import sapt
 from . import proc
 from . import interface_cfour
+import sys
 
 from psi4.driver.procrouting.dft import functionals, build_superfunctional_from_dictionary
 

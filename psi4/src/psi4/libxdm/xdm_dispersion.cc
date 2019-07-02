@@ -40,9 +40,16 @@
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
+#include "psi4/libfock/cubature.h"
+#include "psi4/libfock/points.h"
+#include "psi4/libfock/v.h"
 #include "xdm_dispersion.h"
 
 #include <iomanip>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace psi {
 
@@ -75,7 +82,8 @@ namespace psi {
   }
 
   std::string XDMDispersion::print_energy(std::shared_ptr<Molecule> m) {
-    double e = compute_energy(m);
+    // double e = compute_energy(m);
+    double e = 0.0;
     std::stringstream s;
     s.setf(std::ios::scientific);
     s.precision(11);
@@ -145,8 +153,115 @@ namespace psi {
     return s.str();
   }
 
-  double XDMDispersion::compute_energy(std::shared_ptr<Molecule> m) {
+  double XDMDispersion::compute_energy(std::shared_ptr<scf::HF> hf) {
     double E = -100000.0;
+
+    std::map<std::string, std::string> opt_map;
+    opt_map["DFT_PRUNING_SCHEME"] = "FLAT";
+
+    std::map<std::string, int> opt_int_map;
+    opt_int_map["DFT_RADIAL_POINTS"] = 100; // options_.get_int("DFT_VV10_RADIAL_POINTS");
+    opt_int_map["DFT_SPHERICAL_POINTS"] = 302; // options_.get_int("DFT_VV10_SPHERICAL_POINTS");
+    DFTGrid xdmgrid = DFTGrid(hf->molecule(), hf->V_potential()->basis(), opt_int_map, opt_map, hf->options());
+
+    // hf->basis()
+    // hf->molecule()
+    // hf->V_potential()
+    // hf->V_potential()->basis()
+    // hf->options()
+    // hf->functional()
+
+    // hf->V_potential()->grid()
+    //   std::shared_ptr<DFTGrid> grid_;
+    // hf->V_potential()->functional()
+    //   std::shared_ptr<SuperFunctional> functional_;
+    // hf->V_potential()->properties()
+    //   std::vector<std::shared_ptr<PointFunctions>> point_workers_;
+    // std::vector<std::shared_ptr<SuperFunctional>> functional_workers_;
+
+    // std::shared_ptr<BlockOPoints> get_block(int block);
+    // size_t nblocks();
+    // std::map<std::string, double>& quadrature_values() { return quad_values_; }
+    // std::vector<std::shared_ptr<PointFunctions>> pw = hf->V_potential()->properties();
+    // std::map<std::string, SharedVector>& pv = pw[0].point_values()
+
+    // std::map<std::string, SharedVector>& point_values() { return point_values_; }
+    // point_values_["RHO_A"] = std::make_shared<Vector>("RHO_A", max_points_);
+
+    // see prepare_vv10_cache in v.cc for the following on  how to prepare the workers
+    int rank = 0;
+
+    const int max_points = xdmgrid.max_points();
+    const int max_functions = xdmgrid.max_functions();
+    std::vector<std::shared_ptr<PointFunctions>> xdm_point_workers;
+
+    int num_threads_ = 1;
+#ifdef _OPENMP
+    num_threads_ = omp_get_max_threads();
+#endif
+
+    for (size_t i = 0; i < num_threads_; i++) {
+      auto point_tmp = std::make_shared<RKSFunctions>(hf->V_potential()->basis(), max_points, max_functions);
+      point_tmp->set_ansatz(2); // to get up to the laplacian
+      point_tmp->set_pointers(hf->V_potential()->Dao()[0]);
+      xdm_point_workers.push_back(point_tmp);
+    }
+
+    std::vector<std::map<std::string, SharedVector>> xdm_tmp_cache;
+    xdm_tmp_cache.resize(xdmgrid.blocks().size());
+
+    double rhosum = 0.0;
+#pragma omp parallel for private(rank) schedule(guided) num_threads(num_threads_)
+    for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {
+#ifdef _OPENMP
+        rank = omp_get_thread_num();
+#endif
+        
+        // Get workers and compute data
+        // std::shared_ptr<SuperFunctional> fworker = functional_workers_[rank];
+        std::shared_ptr<PointFunctions> pworker = xdm_point_workers[rank];
+        std::shared_ptr<BlockOPoints> block = xdmgrid.blocks()[Q];
+
+        pworker->compute_points(block,false);
+        xdm_tmp_cache[Q] = pworker->point_values();
+
+        int npoints = block->npoints();
+        double* x = block->x();
+        double* y = block->y();
+        double* z = block->z();
+        double* w = block->w();
+        double* rho_a = pworker->point_value("RHO_A")->pointer();
+        // printf("I am in block %zu with %zu points\n",Q,npoints);
+        for (int i=0; i<npoints; i++){
+          rhosum += w[i] * rho_a[i];
+        }
+    }
+    printf("rho_sum = %.10f\n",rhosum);
+
+    // printf("molecule\n");
+    // for (int i=0; i<hf->molecule()->natom(); i++){
+    //   printf("%s %.10f %.10f %.10f\n",hf->molecule()->symbol(i).c_str(),
+    //          hf->molecule()->x(i),hf->molecule()->y(i),hf->molecule()->z(i));
+    // }
+
+    printf("done!\n");
+    exit(0);
+
+    // // how is the exc calculated? (v.cc)
+    // for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {
+    //   std::shared_ptr<BlockOPoints> block = xdmgrid.blocks()[Q];
+    //   // std::shared_ptr<PointFunctions> pworker = point_workers_[rank];
+
+    // //   // calculate rho, etc.
+    // //   pworker->compute_points(block, false);
+    // //   // do the quadrature
+    // //   std::vector<double> qvals = dft_integrators::rks_quadrature_integrate(block, fworker, pworker);
+    // //   functionalq[rank] += qvals[0];
+    // //   dft_integrators::rks_integrator(block, fworker, pworker, V_local[rank]);
+    // }
+    // // quad_values_["FUNCTIONAL"] = std::accumulate(functionalq.begin(), functionalq.end(), 0.0);
+    // printf("here\n");
+    // exit(0);
 
     outfile->Printf("\nxxxx in routine compute_energy\n");
     return E;

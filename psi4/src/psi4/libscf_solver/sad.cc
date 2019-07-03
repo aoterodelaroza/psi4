@@ -108,16 +108,14 @@ void SADGuess::compute_guess() {
     timer_off("SAD Guess");
 }
 void SADGuess::form_D() {
-    // Build Neutral D in AO basis (block diagonal)
-    SharedMatrix DAO;
     // Huckel matrices
     SharedMatrix HuckelC;
     SharedVector HuckelE;
-    run_atomic_calculations(DAO, HuckelC, HuckelE);
+    run_atomic_calculations(DAO_, HuckelC, HuckelE);
 
     // Transform Neutral D from AO to SO basis
     Da_ = std::make_shared<Matrix>("Da SAD", AO2SO_->colspi(), AO2SO_->colspi());
-    Da_->apply_symmetry(DAO, AO2SO_);
+    Da_->apply_symmetry(DAO_, AO2SO_);
 
     // Set Db to Da
     Db_ = Da_;
@@ -197,9 +195,9 @@ void SADGuess::run_atomic_calculations(SharedMatrix& DAO, SharedMatrix& HuckelC,
     }
 
     // Determine redundant atoms
-    std::vector<int> unique_indices(molecule_->natom(), 0);  // All atoms to representative unique atom
-    std::vector<int> atomic_indices(molecule_->natom(), 0);  // unique atom to first representative atom
-    std::vector<int> offset_indices(molecule_->natom(), 0);  // unique atom index to rank
+    unique_indices.assign(molecule_->natom(), 0);
+    atomic_indices.assign(molecule_->natom(), 0);
+    offset_indices.assign(molecule_->natom(), 0);
     int nunique = 0;
     for (int l = 0; l < molecule_->natom(); l++) {
         unique_indices[l] = l;
@@ -234,7 +232,7 @@ void SADGuess::run_atomic_calculations(SharedMatrix& DAO, SharedMatrix& HuckelC,
     }
 
     // Atomic density matrices
-    std::vector<SharedMatrix> atomic_D(nunique);
+    atomic_D.resize(nunique);
     // Atomic orbitals for Huckel
     std::vector<SharedMatrix> atomic_Chu(nunique);
     // Atomic orbital energies for Huckel

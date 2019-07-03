@@ -204,10 +204,27 @@ namespace psi {
     scf::SADGuess sadguess = scf::SADGuess(basis,sad_basissets,hf->options());
     sadguess.set_atomic_fit_bases(sad_fitting_basissets);
     sadguess.compute_guess();
-    sadguess.Da()->print();
+    sadguess.DAO_->print();
     hf->options().set_global_bool("SAD_FRAC_OCC",sadfrac);
     hf->options().set_global_bool("SAD_SPIN_AVERAGE",sadspinavg);
     hf->options().set_global_str("SAD_SCF_TYPE",sadscftype);
+
+    SharedMatrix DA_oxy = std::make_shared<Matrix>("D_oxy", basis->nbf(), basis->nbf());
+    int idxwant = 0;
+    DA_oxy->zero();
+    for (int A = 0, offset = 0; A < hf->molecule()->natom(); A++) {
+      int nbf = sad_basissets[A]->nbf();
+      if (A == idxwant) {
+        int back_index = sadguess.unique_indices[A];
+        for (int m = 0; m < nbf; m++){
+          for (int n = 0; n < nbf; n++){
+            DA_oxy->set(0, m + offset, n + offset, 0.5 * sadguess.atomic_D[sadguess.offset_indices[back_index]]->get(m, n));
+          }
+        }
+      }
+      offset += nbf;
+    }
+    DA_oxy->print();
 
     // see prepare_vv10_cache in v.cc for the following on  how to prepare the workers
     int rank = 0;
@@ -216,6 +233,7 @@ namespace psi {
     const int max_functions = xdmgrid.max_functions();
     std::vector<std::shared_ptr<PointFunctions>> xdm_point_workers;
     std::vector<std::shared_ptr<PointFunctions>> atomic_point_workers;
+    std::vector<std::shared_ptr<PointFunctions>> free_point_workers;
 
     int num_threads_ = 1;
 #ifdef _OPENMP
@@ -231,16 +249,22 @@ namespace psi {
     for (size_t i = 0; i < num_threads_; i++) {
       auto point_tmp = std::make_shared<RKSFunctions>(hf->V_potential()->basis(), max_points, max_functions);
       point_tmp->set_ansatz(0);
-      point_tmp->set_pointers(sadguess.Da());
+      point_tmp->set_pointers(sadguess.DAO_);
       atomic_point_workers.push_back(point_tmp);
     }
+    for (size_t i = 0; i < num_threads_; i++) {
+      auto point_tmp = std::make_shared<RKSFunctions>(hf->V_potential()->basis(), max_points, max_functions);
+      point_tmp->set_ansatz(0);
+      point_tmp->set_pointers(DA_oxy);
+      free_point_workers.push_back(point_tmp);
+    }
     hf->V_potential()->Dao()[0]->print();
-    sadguess.Da()->print();
+    sadguess.DAO_->print();
 
     std::vector<std::map<std::string, SharedVector>> xdm_tmp_cache;
     xdm_tmp_cache.resize(xdmgrid.blocks().size());
 
-    double rhosum1 = 0.0, rhosum2 = 0.0;
+    double rhosum1 = 0.0, rhosum2 = 0.0, rhosum3 = 0.0;
 #pragma omp parallel for private(rank) schedule(guided) num_threads(num_threads_)
     for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {
 #ifdef _OPENMP
@@ -251,10 +275,12 @@ namespace psi {
       // std::shared_ptr<SuperFunctional> fworker = functional_workers_[rank];
       std::shared_ptr<PointFunctions> pworker = xdm_point_workers[rank];
       std::shared_ptr<PointFunctions> atworker = atomic_point_workers[rank];
+      std::shared_ptr<PointFunctions> freeworker = free_point_workers[rank];
       std::shared_ptr<BlockOPoints> block = xdmgrid.blocks()[Q];
 
       pworker->compute_points(block,false);
       atworker->compute_points(block,false);
+      freeworker->compute_points(block,false);
       xdm_tmp_cache[Q] = pworker->point_values();
 
       int npoints = block->npoints();
@@ -267,27 +293,32 @@ namespace psi {
       double* grho2_a = pworker->point_value("GAMMA_AA")->pointer();
       double* tau_a = pworker->point_value("TAU_A")->pointer();
       double* rhoat = atworker->point_value("RHO_A")->pointer();
+      double* rhooxy = freeworker->point_value("RHO_A")->pointer();
 
       for (int i=0; i<npoints; i++){
-        printf("%.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
-               x[i],y[i],z[i],rho_a[i],lap_a[i],grho2_a[i],tau_a[i]);
-        fflush(stdout);
+        // printf("%.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+        //        x[i],y[i],z[i],rho_a[i],lap_a[i],grho2_a[i],tau_a[i]);
+        // printf("%.10f %.10f %.10f %.10f %.10f\n",
+        //        x[i],y[i],z[i],rho_a[i],rhoat[i]);
+        // fflush(stdout);
         rhosum1 += w[i] * rho_a[i];
         rhosum2 += w[i] * rhoat[i];
+        rhosum3 += w[i] * rhooxy[i];
       }
     }
-    printf("rho_sum = %.10f %.10f\n",rhosum1,rhosum2);
+    printf("rho_sum = %.10f %.10f %.10f\n",rhosum1,rhosum2,rhosum3);
     fflush(stdout);
-
-    printf("done!\n");
-    fflush(stdout);
-    exit(0);
 
     // printf("molecule\n");
     // for (int i=0; i<hf->molecule()->natom(); i++){
     //   printf("%s %.10f %.10f %.10f\n",hf->molecule()->symbol(i).c_str(),
     //          hf->molecule()->x(i),hf->molecule()->y(i),hf->molecule()->z(i));
     // }
+
+    printf("done!\n");
+    fflush(stdout);
+    exit(0);
+    
 
     // // how is the exc calculated? (v.cc)
     // for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {

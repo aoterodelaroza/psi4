@@ -31,60 +31,67 @@
 
 namespace psi {
 
-class BasisSet;
-class Molecule;
+  class BasisSet;
+  class Molecule;
 
-namespace scf {
+  namespace scf {
 
-class SADGuess {
-   protected:
-    int print_;
-    int debug_;
+    class SADGuess {
+    protected:
+      int print_;
+      int debug_;
 
-    std::shared_ptr<Molecule> molecule_;
-    std::shared_ptr<BasisSet> basis_;
-    std::vector<std::shared_ptr<BasisSet>> atomic_bases_;
-    std::vector<std::shared_ptr<BasisSet>> atomic_fit_bases_;
-    SharedMatrix AO2SO_;
+      std::shared_ptr<Molecule> molecule_;
+      std::shared_ptr<BasisSet> basis_;
+      std::vector<std::shared_ptr<BasisSet>> atomic_bases_;
+      std::vector<std::shared_ptr<BasisSet>> atomic_fit_bases_;
+      SharedMatrix AO2SO_;
 
-    Options& options_;
+      Options& options_;
 
-    SharedMatrix Da_;
-    SharedMatrix Db_;
-    SharedMatrix Ca_;
-    SharedMatrix Cb_;
+      SharedMatrix Da_;
+      SharedMatrix Db_;
+      SharedMatrix Ca_;
+      SharedMatrix Cb_;
 
-    void common_init();
+      void common_init();
 
-    void run_atomic_calculations(SharedMatrix& D_AO, SharedMatrix& Huckel_C, SharedVector& Huckel_E);
-    void form_gradient(SharedMatrix grad, SharedMatrix F, SharedMatrix D, SharedMatrix S, SharedMatrix X);
-    void get_uhf_atomic_density(std::shared_ptr<BasisSet> atomic_basis, std::shared_ptr<BasisSet> fit_basis,
-                                SharedVector occ_a, SharedVector occ_b, SharedMatrix D, SharedMatrix Chuckel,
-                                SharedVector Ehuckel);
-    void form_C_and_D(SharedMatrix X, SharedMatrix F, SharedMatrix C, SharedVector E, SharedMatrix Cocc,
-                      SharedVector occ, SharedMatrix D);
+      void run_atomic_calculations(SharedMatrix& D_AO, SharedMatrix& Huckel_C, SharedVector& Huckel_E);
+      void form_gradient(SharedMatrix grad, SharedMatrix F, SharedMatrix D, SharedMatrix S, SharedMatrix X);
+      void get_uhf_atomic_density(std::shared_ptr<BasisSet> atomic_basis, std::shared_ptr<BasisSet> fit_basis,
+                                  SharedVector occ_a, SharedVector occ_b, SharedMatrix D, SharedMatrix Chuckel,
+                                  SharedVector Ehuckel);
+      void form_C_and_D(SharedMatrix X, SharedMatrix F, SharedMatrix C, SharedVector E, SharedMatrix Cocc,
+                        SharedVector occ, SharedMatrix D);
 
-    void form_D();
-    void form_C();
+      void form_D();
+      void form_C();
 
-   public:
-    SADGuess(std::shared_ptr<BasisSet> basis, std::vector<std::shared_ptr<BasisSet>> atomic_bases, Options& options);
-    virtual ~SADGuess();
+    public:
+      // xxxx //
+      std::vector<int> unique_indices;
+      std::vector<int> atomic_indices;
+      std::vector<int> offset_indices;
+      std::vector<SharedMatrix> atomic_D;
+      SharedMatrix DAO_;
 
-    void compute_guess();
+      SADGuess(std::shared_ptr<BasisSet> basis, std::vector<std::shared_ptr<BasisSet>> atomic_bases, Options& options);
+      virtual ~SADGuess();
 
-    SharedMatrix Da() const { return Da_; }
-    SharedMatrix Db() const { return Db_; }
-    SharedMatrix Ca() const { return Ca_; }
-    SharedMatrix Cb() const { return Cb_; }
+      void compute_guess();
 
-    SharedMatrix huckel_guess();
+      SharedMatrix Da() const { return Da_; }
+      SharedMatrix Db() const { return Db_; }
+      SharedMatrix Ca() const { return Ca_; }
+      SharedMatrix Cb() const { return Cb_; }
 
-    void set_atomic_fit_bases(std::vector<std::shared_ptr<BasisSet>> fit_bases) { atomic_fit_bases_ = fit_bases; }
-    void set_print(int print) { print_ = print; }
-    void set_debug(int debug) { debug_ = debug; }
-};
-}  // namespace scf
+      SharedMatrix huckel_guess();
+
+      void set_atomic_fit_bases(std::vector<std::shared_ptr<BasisSet>> fit_bases) { atomic_fit_bases_ = fit_bases; }
+      void set_print(int print) { print_ = print; }
+      void set_debug(int debug) { debug_ = debug; }
+    };
+  }  // namespace scf
 }  // namespace psi
 
 #endif

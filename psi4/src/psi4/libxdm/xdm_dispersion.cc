@@ -43,6 +43,7 @@
 #include "psi4/libfock/cubature.h"
 #include "psi4/libfock/points.h"
 #include "psi4/libfock/v.h"
+#include "psi4/libscf_solver/sad.h"
 #include "xdm_dispersion.h"
 
 #include <iomanip>
@@ -127,27 +128,27 @@ namespace psi {
 
     s << "   " << " XDMDispersion Hessian ([a.u.]): " << std::endl << std::endl;
     for (int k = 1; k <= m->natom(); k++) {
-        for (int j = 1; j <= m->natom(); j++) {
-            // clang-format off
-            s << "    Atom Pair A = " << k << " B = " << j << ":" << std::endl << std::endl;
-            s << "                   xB                 yB                  zB" << std::endl;
-            s << "   -----------------------------------------------------------------" << std::endl;
+      for (int j = 1; j <= m->natom(); j++) {
+        // clang-format off
+        s << "    Atom Pair A = " << k << " B = " << j << ":" << std::endl << std::endl;
+        s << "                   xB                 yB                  zB" << std::endl;
+        s << "   -----------------------------------------------------------------" << std::endl;
 
-            s << "  " << std::setw(5) << "xA" <<
-              std::setw(20) << h[(k - 1) * 3 + 0][(j - 1) * 3 + 0] <<
-              std::setw(20) << h[(k - 1) * 3 + 0][(j - 1) * 3 + 1] <<
-              std::setw(20) << h[(k - 1) * 3 + 0][(j - 1) * 3 + 2] << std::endl;
-            s << "  " << std::setw(5) << "yA" <<
-              std::setw(20) << h[(k - 1) * 3 + 1][(j - 1) * 3 + 0] <<
-              std::setw(20) << h[(k - 1) * 3 + 1][(j - 1) * 3 + 1] <<
-              std::setw(20) << h[(k - 1) * 3 + 1][(j - 1) * 3 + 2] << std::endl;
-            s << "  " << std::setw(5) << "zA" <<
-              std::setw(20) << h[(k - 1) * 3 + 2][(j - 1) * 3 + 0] <<
-              std::setw(20) << h[(k - 1) * 3 + 2][(j - 1) * 3 + 1] <<
-              std::setw(20) << h[(k - 1) * 3 + 2][(j - 1) * 3 + 2] << std::endl;
-            s << std::endl;
-            // clang-format on
-        }
+        s << "  " << std::setw(5) << "xA" <<
+          std::setw(20) << h[(k - 1) * 3 + 0][(j - 1) * 3 + 0] <<
+          std::setw(20) << h[(k - 1) * 3 + 0][(j - 1) * 3 + 1] <<
+          std::setw(20) << h[(k - 1) * 3 + 0][(j - 1) * 3 + 2] << std::endl;
+        s << "  " << std::setw(5) << "yA" <<
+          std::setw(20) << h[(k - 1) * 3 + 1][(j - 1) * 3 + 0] <<
+          std::setw(20) << h[(k - 1) * 3 + 1][(j - 1) * 3 + 1] <<
+          std::setw(20) << h[(k - 1) * 3 + 1][(j - 1) * 3 + 2] << std::endl;
+        s << "  " << std::setw(5) << "zA" <<
+          std::setw(20) << h[(k - 1) * 3 + 2][(j - 1) * 3 + 0] <<
+          std::setw(20) << h[(k - 1) * 3 + 2][(j - 1) * 3 + 1] <<
+          std::setw(20) << h[(k - 1) * 3 + 2][(j - 1) * 3 + 2] << std::endl;
+        s << std::endl;
+        // clang-format on
+      }
     }
     outfile->Printf("\nxxxx in routine print_hessian\n");
     return s.str();
@@ -156,14 +157,7 @@ namespace psi {
   double XDMDispersion::compute_energy(std::shared_ptr<scf::HF> hf) {
     double E = -100000.0;
 
-    std::map<std::string, std::string> opt_map;
-    opt_map["DFT_PRUNING_SCHEME"] = "FLAT";
-
-    std::map<std::string, int> opt_int_map;
-    opt_int_map["DFT_RADIAL_POINTS"] = 100; // options_.get_int("DFT_VV10_RADIAL_POINTS");
-    opt_int_map["DFT_SPHERICAL_POINTS"] = 302; // options_.get_int("DFT_VV10_SPHERICAL_POINTS");
-    DFTGrid xdmgrid = DFTGrid(hf->molecule(), hf->V_potential()->basis(), opt_int_map, opt_map, hf->options());
-
+    /////// some notes ////////
     // hf->basis()
     // hf->molecule()
     // hf->V_potential()
@@ -186,7 +180,34 @@ namespace psi {
     // std::map<std::string, SharedVector>& pv = pw[0].point_values()
 
     // std::map<std::string, SharedVector>& point_values() { return point_values_; }
-    // point_values_["RHO_A"] = std::make_shared<Vector>("RHO_A", max_points_);
+
+    std::map<std::string, std::string> opt_map;
+    opt_map["DFT_PRUNING_SCHEME"] = "FLAT";
+
+    std::map<std::string, int> opt_int_map;
+    opt_int_map["DFT_RADIAL_POINTS"] = 100; // options_.get_int("DFT_VV10_RADIAL_POINTS");
+    opt_int_map["DFT_SPHERICAL_POINTS"] = 302; // options_.get_int("DFT_VV10_SPHERICAL_POINTS");
+    DFTGrid xdmgrid = DFTGrid(hf->molecule(), hf->V_potential()->basis(), opt_int_map, opt_map, hf->options());
+
+    // // Compute the atomic density matrix
+    // // xxxx need atomic basis sets in the case when they are not available
+    bool sadfrac = hf->options().get_bool("SAD_FRAC_OCC");
+    hf->options().set_global_bool("SAD_FRAC_OCC",true);
+    bool sadspinavg = hf->options().get_bool("SAD_SPIN_AVERAGE");
+    hf->options().set_global_bool("SAD_SPIN_AVERAGE",true);
+    std::string sadscftype = hf->options().get_str("SAD_SCF_TYPE");
+    hf->options().set_global_str("SAD_SCF_TYPE","DIRECT");
+
+    std::shared_ptr<BasisSet> basis = hf->V_potential()->basis();
+    std::vector<std::shared_ptr<BasisSet>> sad_basissets = hf->sad_basissets();
+    std::vector<std::shared_ptr<BasisSet>> sad_fitting_basissets = hf->sad_fitting_basissets();
+    scf::SADGuess sadguess = scf::SADGuess(basis,sad_basissets,hf->options());
+    sadguess.set_atomic_fit_bases(sad_fitting_basissets);
+    sadguess.compute_guess();
+    sadguess.Da()->print();
+    hf->options().set_global_bool("SAD_FRAC_OCC",sadfrac);
+    hf->options().set_global_bool("SAD_SPIN_AVERAGE",sadspinavg);
+    hf->options().set_global_str("SAD_SCF_TYPE",sadscftype);
 
     // see prepare_vv10_cache in v.cc for the following on  how to prepare the workers
     int rank = 0;
@@ -194,6 +215,7 @@ namespace psi {
     const int max_points = xdmgrid.max_points();
     const int max_functions = xdmgrid.max_functions();
     std::vector<std::shared_ptr<PointFunctions>> xdm_point_workers;
+    std::vector<std::shared_ptr<PointFunctions>> atomic_point_workers;
 
     int num_threads_ = 1;
 #ifdef _OPENMP
@@ -206,52 +228,66 @@ namespace psi {
       point_tmp->set_pointers(hf->V_potential()->Dao()[0]);
       xdm_point_workers.push_back(point_tmp);
     }
+    for (size_t i = 0; i < num_threads_; i++) {
+      auto point_tmp = std::make_shared<RKSFunctions>(hf->V_potential()->basis(), max_points, max_functions);
+      point_tmp->set_ansatz(0);
+      point_tmp->set_pointers(sadguess.Da());
+      atomic_point_workers.push_back(point_tmp);
+    }
+    hf->V_potential()->Dao()[0]->print();
+    sadguess.Da()->print();
 
     std::vector<std::map<std::string, SharedVector>> xdm_tmp_cache;
     xdm_tmp_cache.resize(xdmgrid.blocks().size());
 
-    double rhosum = 0.0;
+    double rhosum1 = 0.0, rhosum2 = 0.0;
 #pragma omp parallel for private(rank) schedule(guided) num_threads(num_threads_)
     for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {
 #ifdef _OPENMP
-        rank = omp_get_thread_num();
+      rank = omp_get_thread_num();
 #endif
         
-        // Get workers and compute data
-        // std::shared_ptr<SuperFunctional> fworker = functional_workers_[rank];
-        std::shared_ptr<PointFunctions> pworker = xdm_point_workers[rank];
-        std::shared_ptr<BlockOPoints> block = xdmgrid.blocks()[Q];
+      // Get workers and compute data
+      // std::shared_ptr<SuperFunctional> fworker = functional_workers_[rank];
+      std::shared_ptr<PointFunctions> pworker = xdm_point_workers[rank];
+      std::shared_ptr<PointFunctions> atworker = atomic_point_workers[rank];
+      std::shared_ptr<BlockOPoints> block = xdmgrid.blocks()[Q];
 
-        pworker->compute_points(block,false);
-        xdm_tmp_cache[Q] = pworker->point_values();
+      pworker->compute_points(block,false);
+      atworker->compute_points(block,false);
+      xdm_tmp_cache[Q] = pworker->point_values();
 
-        int npoints = block->npoints();
-        double* x = block->x();
-        double* y = block->y();
-        double* z = block->z();
-        double* w = block->w();
-        double* rho_a = pworker->point_value("RHO_A")->pointer();
-        double* lap_a = pworker->point_value("LAPL_RHO_A")->pointer();
-        double* grho2_a = pworker->point_value("GAMMA_AA")->pointer();
-        double* tau_a = pworker->point_value("TAU_A")->pointer();
+      int npoints = block->npoints();
+      double* x = block->x();
+      double* y = block->y();
+      double* z = block->z();
+      double* w = block->w();
+      double* rho_a = pworker->point_value("RHO_A")->pointer();
+      double* lap_a = pworker->point_value("LAPL_RHO_A")->pointer();
+      double* grho2_a = pworker->point_value("GAMMA_AA")->pointer();
+      double* tau_a = pworker->point_value("TAU_A")->pointer();
+      double* rhoat = atworker->point_value("RHO_A")->pointer();
 
-        // printf("I am in block %zu with %zu points\n",Q,npoints);
-        // for (int i=0; i<npoints; i++){
-        //   printf("%.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
-        //          x[i],y[i],z[i],rho_a[i],lap_a[i],grho2_a[i],tau_a[i]);
-        //   rhosum += w[i] * rho_a[i];
-        // }
+      for (int i=0; i<npoints; i++){
+        printf("%.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+               x[i],y[i],z[i],rho_a[i],lap_a[i],grho2_a[i],tau_a[i]);
+        fflush(stdout);
+        rhosum1 += w[i] * rho_a[i];
+        rhosum2 += w[i] * rhoat[i];
+      }
     }
-    // printf("rho_sum = %.10f\n",rhosum);
+    printf("rho_sum = %.10f %.10f\n",rhosum1,rhosum2);
+    fflush(stdout);
+
+    printf("done!\n");
+    fflush(stdout);
+    exit(0);
 
     // printf("molecule\n");
     // for (int i=0; i<hf->molecule()->natom(); i++){
     //   printf("%s %.10f %.10f %.10f\n",hf->molecule()->symbol(i).c_str(),
     //          hf->molecule()->x(i),hf->molecule()->y(i),hf->molecule()->z(i));
     // }
-
-    // printf("done!\n");
-    // exit(0);
 
     // // how is the exc calculated? (v.cc)
     // for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {
@@ -278,9 +314,9 @@ namespace psi {
     double **Gp = G->pointer();
 
     for (int i = 0; i < m->natom(); i++) {
-        for (int j = 0; j < 3; j++) {
-            Gp[i][j] = 0.0;
-        }
+      for (int j = 0; j < 3; j++) {
+        Gp[i][j] = 0.0;
+      }
     }
 
     outfile->Printf("\nxxxx in routine compute_gradient\n");
@@ -292,4 +328,4 @@ namespace psi {
     throw PSIEXCEPTION("XDMDispersion: Hessians not implemented");
   }
 
-}  // end namespace
+}

@@ -406,6 +406,9 @@ class HF : public Wavefunction {
         sad_fitting_basissets_ = basis_vec;
     }
 
+    std::vector<std::shared_ptr<BasisSet>> sad_basissets() { return sad_basissets_; }
+    std::vector<std::shared_ptr<BasisSet>> sad_fitting_basissets() { return sad_fitting_basissets_; }
+
     // Energies data
     void set_energies(std::string key, double value) { energies_[key] = value; }
     double get_energies(std::string key) { return energies_[key]; }

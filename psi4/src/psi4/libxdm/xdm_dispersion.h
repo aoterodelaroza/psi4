@@ -37,6 +37,7 @@
  ***********************************************************/
 #include "psi4/psi4-dec.h"
 #include "psi4/libscf_solver/hf.h"
+#include "psi4/libmints/basisset.h"
 #include <string>
 
 namespace psi {
@@ -71,6 +72,10 @@ namespace psi {
     void print(std::string out_fname = "outfile", int level = 1) const;
     void py_print() const { print("outfile", 1); }
   };
+
+  // static routines
+  static void run_atomic_calculations(std::shared_ptr<scf::HF> hf, std::vector<SharedMatrix>& atomic_D, std::vector<std::shared_ptr<BasisSet>> atomic_bases_);
 }
+
 
 #endif

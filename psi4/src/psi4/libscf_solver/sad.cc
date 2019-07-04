@@ -109,13 +109,14 @@ void SADGuess::compute_guess() {
 }
 void SADGuess::form_D() {
     // Huckel matrices
+    SharedMatrix DAO;
     SharedMatrix HuckelC;
     SharedVector HuckelE;
-    run_atomic_calculations(DAO_, HuckelC, HuckelE);
+    run_atomic_calculations(DAO, HuckelC, HuckelE);
 
     // Transform Neutral D from AO to SO basis
     Da_ = std::make_shared<Matrix>("Da SAD", AO2SO_->colspi(), AO2SO_->colspi());
-    Da_->apply_symmetry(DAO_, AO2SO_);
+    Da_->apply_symmetry(DAO, AO2SO_);
 
     // Set Db to Da
     Db_ = Da_;
@@ -195,9 +196,9 @@ void SADGuess::run_atomic_calculations(SharedMatrix& DAO, SharedMatrix& HuckelC,
     }
 
     // Determine redundant atoms
-    unique_indices.assign(molecule_->natom(), 0);
-    atomic_indices.assign(molecule_->natom(), 0);
-    offset_indices.assign(molecule_->natom(), 0);
+    std::vector<int> unique_indices(molecule_->natom(), 0);
+    std::vector<int> atomic_indices(molecule_->natom(), 0);
+    std::vector<int> offset_indices(molecule_->natom(), 0);
     int nunique = 0;
     for (int l = 0; l < molecule_->natom(); l++) {
         unique_indices[l] = l;
@@ -232,7 +233,7 @@ void SADGuess::run_atomic_calculations(SharedMatrix& DAO, SharedMatrix& HuckelC,
     }
 
     // Atomic density matrices
-    atomic_D.resize(nunique);
+    std::vector<SharedMatrix> atomic_D(nunique);
     // Atomic orbitals for Huckel
     std::vector<SharedMatrix> atomic_Chu(nunique);
     // Atomic orbital energies for Huckel
@@ -388,6 +389,15 @@ void SADGuess::run_atomic_calculations(SharedMatrix& DAO, SharedMatrix& HuckelC,
         DAO->print();
         HuckelC->print();
         HuckelE->print();
+    }
+
+    // maybe save the atomic wavefunction
+    if (options_.exists("SAD_SAVE_ATOMIC") && options_.get_bool("SAD_SAVE_ATOMIC")){
+      unique_indices_ = unique_indices;
+      atomic_indices_ = atomic_indices;
+      offset_indices_ = offset_indices;
+      DAO_ = DAO;
+      atomic_D_ = atomic_D;
     }
 }
 void SADGuess::get_uhf_atomic_density(std::shared_ptr<BasisSet> bas, std::shared_ptr<BasisSet> fit, SharedVector occ_a,

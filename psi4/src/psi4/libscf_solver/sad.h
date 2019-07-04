@@ -49,6 +49,15 @@ namespace psi {
 
       Options& options_;
 
+      // Save the atomic and superposition density matrix for atomic
+      // density calculations. Only saved if SAD_SAVE_ATOMIC is passed
+      // as an option.
+      std::vector<int> unique_indices_;
+      std::vector<int> atomic_indices_;
+      std::vector<int> offset_indices_;
+      std::vector<SharedMatrix> atomic_D_;
+      SharedMatrix DAO_;
+
       SharedMatrix Da_;
       SharedMatrix Db_;
       SharedMatrix Ca_;
@@ -68,13 +77,6 @@ namespace psi {
       void form_C();
 
     public:
-      // xxxx //
-      std::vector<int> unique_indices;
-      std::vector<int> atomic_indices;
-      std::vector<int> offset_indices;
-      std::vector<SharedMatrix> atomic_D;
-      SharedMatrix DAO_;
-
       SADGuess(std::shared_ptr<BasisSet> basis, std::vector<std::shared_ptr<BasisSet>> atomic_bases, Options& options);
       virtual ~SADGuess();
 
@@ -90,6 +92,12 @@ namespace psi {
       void set_atomic_fit_bases(std::vector<std::shared_ptr<BasisSet>> fit_bases) { atomic_fit_bases_ = fit_bases; }
       void set_print(int print) { print_ = print; }
       void set_debug(int debug) { debug_ = debug; }
+
+      std::vector<int> unique_indices() { return unique_indices_; }
+      std::vector<int> atomic_indices() { return atomic_indices_; }
+      std::vector<int> offset_indices() { return offset_indices_; } 
+      std::vector<SharedMatrix> atomic_D() { return atomic_D_; }
+      SharedMatrix DAO() { return DAO_; }
     };
   }  // namespace scf
 }  // namespace psi

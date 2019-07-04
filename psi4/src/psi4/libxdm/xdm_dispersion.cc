@@ -33,6 +33,7 @@
  * Based on the dispersion code by Robert Parrish <robparrish@gmail.com>
  ***********************************************************/
 
+#include "psi4/psifiles.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/molecule.h"
@@ -60,7 +61,6 @@ namespace psi {
 
   std::shared_ptr<XDMDispersion> XDMDispersion::build(double a1, double a2) {
     auto disp = std::make_shared<XDMDispersion>();
-    outfile->Printf("\nxxxx in routine build\n");
     disp->a1_ = a1;
     disp->a2_ = a2;
     return disp;
@@ -157,68 +157,66 @@ namespace psi {
   double XDMDispersion::compute_energy(std::shared_ptr<scf::HF> hf) {
     double E = -100000.0;
 
-    /////// some notes ////////
-    // hf->basis()
-    // hf->molecule()
-    // hf->V_potential()
-    // hf->V_potential()->basis()
-    // hf->options()
-    // hf->functional()
+    // XDM parameters
+    const double bohr2angstrom = 0.52917721067;
+    double a1 = a1_, a2 = a2_ / bohr2angstrom;
 
-    // hf->V_potential()->grid()
-    //   std::shared_ptr<DFTGrid> grid_;
-    // hf->V_potential()->functional()
-    //   std::shared_ptr<SuperFunctional> functional_;
-    // hf->V_potential()->properties()
-    //   std::vector<std::shared_ptr<PointFunctions>> point_workers_;
-    // std::vector<std::shared_ptr<SuperFunctional>> functional_workers_;
-
-    // std::shared_ptr<BlockOPoints> get_block(int block);
-    // size_t nblocks();
-    // std::map<std::string, double>& quadrature_values() { return quad_values_; }
-    // std::vector<std::shared_ptr<PointFunctions>> pw = hf->V_potential()->properties();
-    // std::map<std::string, SharedVector>& pv = pw[0].point_values()
-
-    // std::map<std::string, SharedVector>& point_values() { return point_values_; }
-
-    std::map<std::string, std::string> opt_map;
-    opt_map["DFT_PRUNING_SCHEME"] = "FLAT";
-
-    std::map<std::string, int> opt_int_map;
-    opt_int_map["DFT_RADIAL_POINTS"] = 100; // options_.get_int("DFT_VV10_RADIAL_POINTS");
-    opt_int_map["DFT_SPHERICAL_POINTS"] = 302; // options_.get_int("DFT_VV10_SPHERICAL_POINTS");
-    DFTGrid xdmgrid = DFTGrid(hf->molecule(), hf->V_potential()->basis(), opt_int_map, opt_map, hf->options());
-
-    // // Compute the atomic density matrix
-    // // xxxx need atomic basis sets in the case when they are not available
-    bool sadfrac = hf->options().get_bool("SAD_FRAC_OCC");
-    hf->options().set_global_bool("SAD_FRAC_OCC",true);
-    bool sadspinavg = hf->options().get_bool("SAD_SPIN_AVERAGE");
-    hf->options().set_global_bool("SAD_SPIN_AVERAGE",true);
-    std::string sadscftype = hf->options().get_str("SAD_SCF_TYPE");
-    hf->options().set_global_str("SAD_SCF_TYPE","DIRECT");
-
-    std::shared_ptr<BasisSet> basis = hf->V_potential()->basis();
+    // Pointers to things
+    std::shared_ptr<Molecule> molecule = hf->molecule();
+    std::shared_ptr<VBase> Vpot = hf->V_potential();
+    std::shared_ptr<BasisSet> basis = Vpot->basis();
     std::vector<std::shared_ptr<BasisSet>> sad_basissets = hf->sad_basissets();
-    std::vector<std::shared_ptr<BasisSet>> sad_fitting_basissets = hf->sad_fitting_basissets();
-    scf::SADGuess sadguess = scf::SADGuess(basis,sad_basissets,hf->options());
-    sadguess.set_atomic_fit_bases(sad_fitting_basissets);
+    std::shared_ptr<SuperFunctional> functional = hf->functional();
+    Options& options = hf->options();
+    std::shared_ptr<DFTGrid> hfgrid = Vpot->grid();
+    std::vector<std::shared_ptr<PointFunctions>> hfprops = Vpot->properties();
+
+    // Some info
+    printf("* Starting XDM *\n");
+    printf("a1 = %.4f\n",a1);
+    printf("a2 = %.4f\n",a2);
+    printf("\n");
+
+    // Print some information about the molecule recieved from above
+    int natom = molecule->natom();
+    printf("natom = %d\n",natom);
+    for (int i=0; i<natom; i++){
+      printf("%s %.10f %.10f %.10f\n",molecule->symbol(i).c_str(),molecule->x(i),molecule->y(i),molecule->z(i));
+    }
+    printf("\n");
+
+    // Build the grid for XDM integration
+    std::map<std::string, std::string> opt_map;
+    std::map<std::string, int> opt_int_map;
+    opt_int_map["DFT_RADIAL_POINTS"] = options.get_int("DFT_XDM_RADIAL_POINTS");
+    opt_int_map["DFT_SPHERICAL_POINTS"] = options.get_int("DFT_XDM_SPHERICAL_POINTS");
+    DFTGrid xdmgrid = DFTGrid(molecule, basis, opt_int_map, opt_map, options);
+
+    // Compute the atomic density matrix, options
+    Options sadopts = options;
+    sadopts.set_global_bool("SAD_FRAC_OCC",true);
+    sadopts.set_global_bool("SAD_SPIN_AVERAGE",true);
+    sadopts.set_global_str("SAD_SCF_TYPE","DIRECT");
+    sadopts.add_bool("SAD_SAVE_ATOMIC",true);
+    if (sad_basissets.empty()){
+      outfile->Printf("Need to have SAD basis sets for the XDM calculation.\n");
+      exit(PSI_RETURN_FAILURE);
+    }
+    scf::SADGuess sadguess = scf::SADGuess(basis,sad_basissets,sadopts);
     sadguess.compute_guess();
-    sadguess.DAO_->print();
-    hf->options().set_global_bool("SAD_FRAC_OCC",sadfrac);
-    hf->options().set_global_bool("SAD_SPIN_AVERAGE",sadspinavg);
-    hf->options().set_global_str("SAD_SCF_TYPE",sadscftype);
+
+    // xxxx //
 
     SharedMatrix DA_oxy = std::make_shared<Matrix>("D_oxy", basis->nbf(), basis->nbf());
     int idxwant = 0;
     DA_oxy->zero();
-    for (int A = 0, offset = 0; A < hf->molecule()->natom(); A++) {
+    for (int A = 0, offset = 0; A < natom; A++) {
       int nbf = sad_basissets[A]->nbf();
       if (A == idxwant) {
-        int back_index = sadguess.unique_indices[A];
+        int back_index = sadguess.unique_indices()[A];
         for (int m = 0; m < nbf; m++){
           for (int n = 0; n < nbf; n++){
-            DA_oxy->set(0, m + offset, n + offset, 0.5 * sadguess.atomic_D[sadguess.offset_indices[back_index]]->get(m, n));
+            DA_oxy->set(0, m + offset, n + offset, 0.5 * sadguess.atomic_D()[sadguess.offset_indices()[back_index]]->get(m, n));
           }
         }
       }
@@ -241,25 +239,23 @@ namespace psi {
 #endif
 
     for (size_t i = 0; i < num_threads_; i++) {
-      auto point_tmp = std::make_shared<RKSFunctions>(hf->V_potential()->basis(), max_points, max_functions);
+      auto point_tmp = std::make_shared<RKSFunctions>(basis, max_points, max_functions);
       point_tmp->set_ansatz(2); // to get up to the laplacian
-      point_tmp->set_pointers(hf->V_potential()->Dao()[0]);
+      point_tmp->set_pointers(Vpot->Dao()[0]);
       xdm_point_workers.push_back(point_tmp);
     }
     for (size_t i = 0; i < num_threads_; i++) {
-      auto point_tmp = std::make_shared<RKSFunctions>(hf->V_potential()->basis(), max_points, max_functions);
+      auto point_tmp = std::make_shared<RKSFunctions>(basis, max_points, max_functions);
       point_tmp->set_ansatz(0);
-      point_tmp->set_pointers(sadguess.DAO_);
+      point_tmp->set_pointers(sadguess.DAO());
       atomic_point_workers.push_back(point_tmp);
     }
     for (size_t i = 0; i < num_threads_; i++) {
-      auto point_tmp = std::make_shared<RKSFunctions>(hf->V_potential()->basis(), max_points, max_functions);
+      auto point_tmp = std::make_shared<RKSFunctions>(basis, max_points, max_functions);
       point_tmp->set_ansatz(0);
       point_tmp->set_pointers(DA_oxy);
       free_point_workers.push_back(point_tmp);
     }
-    hf->V_potential()->Dao()[0]->print();
-    sadguess.DAO_->print();
 
     std::vector<std::map<std::string, SharedVector>> xdm_tmp_cache;
     xdm_tmp_cache.resize(xdmgrid.blocks().size());
@@ -309,17 +305,6 @@ namespace psi {
     printf("rho_sum = %.10f %.10f %.10f\n",rhosum1,rhosum2,rhosum3);
     fflush(stdout);
 
-    // printf("molecule\n");
-    // for (int i=0; i<hf->molecule()->natom(); i++){
-    //   printf("%s %.10f %.10f %.10f\n",hf->molecule()->symbol(i).c_str(),
-    //          hf->molecule()->x(i),hf->molecule()->y(i),hf->molecule()->z(i));
-    // }
-
-    printf("done!\n");
-    fflush(stdout);
-    exit(0);
-    
-
     // // how is the exc calculated? (v.cc)
     // for (size_t Q = 0; Q < xdmgrid.blocks().size(); Q++) {
     //   std::shared_ptr<BlockOPoints> block = xdmgrid.blocks()[Q];
@@ -335,6 +320,15 @@ namespace psi {
     // // quad_values_["FUNCTIONAL"] = std::accumulate(functionalq.begin(), functionalq.end(), 0.0);
     // printf("here\n");
     // exit(0);
+
+    /////// some notes ////////
+
+    // std::vector<std::shared_ptr<SuperFunctional>> functional_workers_;
+    // std::shared_ptr<BlockOPoints> get_block(int block);
+    // size_t nblocks();
+    // std::map<std::string, double>& quadrature_values() { return quad_values_; }
+    // std::map<std::string, SharedVector>& pv = pw[0].point_values()
+    // std::map<std::string, SharedVector>& point_values() { return point_values_; }
 
     outfile->Printf("\nxxxx in routine compute_energy\n");
     return E;

@@ -1534,6 +1534,13 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         options.add_double("DFT_VV10_B", 0.0);
         /*- Define VV10 parameter C -*/
         options.add_double("DFT_VV10_C", 0.0);
+        /* Pruning for XDM grid */
+        options.add_str("XDM_PRUNING_SCHEME", "NONE",
+                        "ROBUST TREUTLER NONE FLAT P_GAUSSIAN D_GAUSSIAN P_SLATER D_SLATER LOG_GAUSSIAN LOG_SLATER NONE");
+        /*- Number of spherical points for XDM integration. -*/
+        options.add_int("DFT_XDM_SPHERICAL_POINTS", 302);
+        /*- Number of radial points for XDM integration. -*/
+        options.add_int("DFT_XDM_RADIAL_POINTS", 75);
         /*- Define XDM parameter a1 -*/
         options.add_double("DFT_XDM_A1", 0.0);
         /*- Define XDM parameter a2 -*/

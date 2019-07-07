@@ -398,6 +398,8 @@ void SADGuess::run_atomic_calculations(SharedMatrix& DAO, SharedMatrix& HuckelC,
       offset_indices_ = offset_indices;
       DAO_ = DAO;
       atomic_D_ = atomic_D;
+      for (int i=0; i<nunique; i++)
+        atomic_D_[i]->scale(0.5);
     }
 }
 void SADGuess::get_uhf_atomic_density(std::shared_ptr<BasisSet> bas, std::shared_ptr<BasisSet> fit, SharedVector occ_a,

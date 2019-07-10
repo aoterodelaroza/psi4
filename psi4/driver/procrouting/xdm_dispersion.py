@@ -32,6 +32,7 @@ import shutil
 import uuid
 import subprocess
 import numpy as np
+import sys
 
 from psi4 import core
 from psi4 import extras
@@ -71,6 +72,7 @@ class XDMDispersion(object):
                 raise XDMError("""Call to run_postg with invalid volume token: %s""" % vol)
 
         # Find environment by merging PSIPATH and PATH environment variables
+        # set the number of threads for postg
         lenv = {
             'PATH': ':'.join([os.path.abspath(x) for x in os.environ.get('PSIPATH', '').split(':') if x != '']) + \
             ':' + os.environ.get('PATH'),
@@ -78,6 +80,7 @@ class XDMDispersion(object):
         }
         #   Filter out None values as subprocess will fault on them
         lenv = {k: v for k, v in lenv.items() if v is not None}
+        lenv["OMP_NUM_THREADS"] = '%d'%core.get_num_threads()
  
         # Setup unique scratch directory and move in (assume we are in psi4)
         current_directory = os.getcwd()

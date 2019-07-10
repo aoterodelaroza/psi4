@@ -54,6 +54,28 @@ funcs.append({
         }
     }
 })
+funcs.append({
+    "name": "PBE-XDM",
+    "x_functionals": {
+        "GGA_X_PBE": {}
+    },
+    "c_functionals": {
+        "GGA_C_PBE": {}
+    },
+    "citation":
+    '    J.P. Perdew et. al., Phys. Rev. Lett., 77(18), 3865-3868, 1996.\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    PBE GGA Exchange-Correlation Functional plus XDM dispersion.\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.4492,
+            'a2': 2.5517,
+            'vol': 'pbe',
+        }
+    }
+})
 
 functional_list = {}
 for functional in funcs:

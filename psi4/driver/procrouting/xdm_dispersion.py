@@ -135,6 +135,7 @@ class XDMDispersion(object):
         self.isrun = True
         self.energy = exdm
         self.grad = np.array(grad).reshape(-1, 3)
+        ## there is no point in adding the Hessian until it is implemented for DFT methods
 
         # Clean up files and remove scratch directory
         os.chdir('..')

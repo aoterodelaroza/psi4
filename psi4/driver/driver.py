@@ -1234,10 +1234,7 @@ def hessian(name, **kwargs):
     lowername, level = driver_util.parse_arbitrary_order(lowername)
     if level:
         kwargs['level'] = level
-
     dertype = _find_derivative_type('hessian', lowername, kwargs.pop('freq_dertype', kwargs.get('dertype', None)))
-    print(dertype)
-    sys.exit(0)
 
     # Make sure the molecule the user provided is the active one
     molecule = kwargs.pop('molecule', core.get_active_molecule())

@@ -31,6 +31,7 @@ import os
 import shutil
 import uuid
 import subprocess
+import numpy as np
 
 from psi4 import core
 from psi4 import extras
@@ -42,13 +43,14 @@ class XDMDispersion(object):
     """
 
     def __init__(self, a1=-1.0, a2=0.0, vol=""):
+        self.isrun = False
         self.a1 = a1
         self.a2 = a2
         self.vol = vol.lower()
         if (not extras.addons("postg")):
             raise XDMError("Cannot find the postg executable for the XDM dispersion correction")
 
-    def run_postg(self,wfn=None,derint=0):
+    def run_postg(self,wfn=None):
         """Calls postg and returns energies and derivatives"""
 
         # grab xdm parameters
@@ -112,12 +114,28 @@ class XDMDispersion(object):
             raise XDMError("""Error running postg. Please check the temporary files in directory: %s\n--- Some info about the error from postg follows, maybe ---\n %s""" % (postg_tmpdir, err.decode('utf-8')))
 
         # Parse output
+        savegrad = False
+        grad = []
         for line in out.splitlines():
             line = line.decode('utf-8')
-            if re.match('dispersion energy',line):
+            if line.startswith('dispersion energy'):
                 sline = line.split()
                 exdm = float(sline[2])
+            if line.startswith('dispersion forces'):
+                savegrad = True
+            if savegrad:
+                lline = line.split()
+                if (len(lline) == 1):
+                    savegrad = False
+                elif (len(lline) == 4):
+                    grad.append([-float(lline[1]), -float(lline[2]), -float(lline[3])])
                 
+        # set the core variable and save the energy and derivatives as fields in this object
+        core.set_variable('DISPERSION CORRECTION ENERGY', exdm)
+        self.isrun = True
+        self.energy = exdm
+        self.grad = np.array(grad).reshape(-1, 3)
+
         # Clean up files and remove scratch directory
         os.chdir('..')
         try:
@@ -125,6 +143,28 @@ class XDMDispersion(object):
         except OSError as err:
             raise OSError("""Unable to remove postg temporary directory: %s""" % postg_tmpdir) from err
         os.chdir(current_directory)
+
+        # Print program output to file if verbose
+        if core.get_option('SCF', 'PRINT') >= 3:
+            text = '\n  ==> postg output <==\n'
+            text += out.decode('utf-8')
+            core.print_out(text)
+        elif core.get_option('SCF', 'PRINT') >= 2:
+            text = '\n  ==> postg output <==\n'
+            save = False
+            for line in out.splitlines():
+                line = line.decode('utf-8')
+                if line.startswith("moments and volumes"):
+                    save = True
+                if save:
+                    text += line + '\n'
+                if line.startswith("total energy"):
+                    break
+            core.print_out(text)
+
+        ## H = driver_findif.assemble_hessian_from_gradients(findif_meta_dict, -1)
+        ## if wfn is not None:
+        ##     wfn.set_variable('DISPERSION CORRECTION HESSIAN', H)
 
         return exdm
 
@@ -162,22 +202,6 @@ class XDMDispersion(object):
 ##     if isP4regime and derint != 0:
 ##         core.set_variable('GCP CORRECTION ENERGY', dashd)
 ##         psi_dashdderiv = core.Matrix.from_list(dashdderiv)
-## 
-##     # Print program output to file if verbose
-##     if not verbose and isP4regime:
-##         verbose = True if core.get_option('SCF', 'PRINT') >= 3 else False
-##     if verbose:
-## 
-##         text = '\n  ==> GCP Output <==\n'
-##         text += out.decode('utf-8')
-##         if derint != 0:
-##             with open(derivfile, 'r') as handle:
-##                 text += handle.read().replace('D', 'E')
-##             text += '\n'
-##         if isP4regime:
-##             core.print_out(text)
-##         else:
-##             print(text)
 ## 
 ##     # return -D & d(-D)/dx
 ##     if derint == -1:

@@ -314,8 +314,8 @@ void SuperFunctional::print(std::string out, int level) const {
 
     if (needs_xdm_) {
         printer->Printf("   => XDM Dispersion Correction Parameters <=\n\n");
-        printer->Printf("    XDM a1              = %14.4E\n", xdm_a1_);
-        printer->Printf("    XDM a2 (ang)        = %14.4E\n", xdm_a2_);
+        printer->Printf("    XDM a1              = %.4f\n", xdm_a1_);
+        printer->Printf("    XDM a2 (ang)        = %.4f\n", xdm_a2_);
         printer->Printf("    XDM volume token    = %s\n", xdm_vol_.c_str());
         printer->Printf("\n");
     }

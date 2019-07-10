@@ -2163,6 +2163,12 @@ def run_scf_gradient(name, **kwargs):
         disp_grad = ref_wfn._disp_functor.compute_gradient(ref_wfn.molecule(), ref_wfn)
         ref_wfn.set_variable("-D Gradient", disp_grad)
 
+    if ref_wfn.functional().needs_xdm():
+        if not ref_wfn.xdm.isrun:
+            raise XDMError("XDM gradients not available but they should be")
+        xdm_grad = core.Matrix.from_array(ref_wfn.xdm.grad,"XDM Gradient")
+        ref_wfn.set_variable("XDM Gradient", xdm_grad)
+
     grad = core.scfgrad(ref_wfn)
 
     if ref_wfn.basisset().has_ECP():

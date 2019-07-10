@@ -115,7 +115,7 @@ void export_functional(py::module &m) {
         .def("set_xdm_a1", &SuperFunctional::set_xdm_a1, "Sets the XDM a1 parameter.")
         .def("set_xdm_a2", &SuperFunctional::set_xdm_a2, "Sets the XDM a2 parameter.")
         .def("set_xdm_vol", &SuperFunctional::set_xdm_vol, "Sets the XDM volume token parameter.")
-        .def("set_do_xdm", &SuperFunctional::set_do_vv10, "Sets whether to do XDM.")
+        .def("set_do_xdm", &SuperFunctional::set_do_xdm, "Sets whether to do XDM.")
         .def("set_grac_shift", &SuperFunctional::set_grac_shift, "Sets the GRAC bulk shift value.")
         .def("set_grac_alpha", &SuperFunctional::set_grac_alpha, "Sets the GRAC alpha parameter.")
         .def("set_grac_beta", &SuperFunctional::set_grac_beta, "Sets the GRAC beta parameter.")

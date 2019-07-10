@@ -28,30 +28,33 @@
 
 from psi4 import core
 from psi4 import extras
-from psi4.driver.p4util.exceptions import XDMError
+from psi4.driver.p4util.exceptions import ValidationError, XDMError
 
 class XDMDispersion(object):
     """Class for tXDM dispersion calculations
 
     """
 
-    def __init__(self, a1=0.0, a2=0.0, vol="0.0"):
+    def __init__(self, a1=-1.0, a2=0.0, vol=""):
         self.a1 = a1
         self.a2 = a2
         self.vol = vol
         if (not extras.addons("postg")):
             raise XDMError("Cannot find the postg executable for the XDM dispersion correction")
 
-    def run_postg(self,wfn=None,nder=0):
+    def run_postg(self,wfn=None,derint=0):
+        """Calls postg and returns energies and derivatives"""
+
+        # Validate arguments
+        if wfn is None:
+            raise ValidationError("Call to run_postg without a wavefunction.")
+        if (self.a1 < 0 or len(self.vol) == 0):
+            raise ValidationError("""Call to run_postg with incorrect parameters a1 = %.4f, a2 = %.4f, vol = %s.""" % (self.a1,self.a2,self.vol))
+
         filename = "blah.molden"
         mw = core.MoldenWriter(wfn)
         mw.write(filename, wfn.Ca(), wfn.Cb(), wfn.epsilon_a(), wfn.epsilon_b(), wfn.occupation_a(), wfn.occupation_b(), False)
-        
 
-        ## driver.molden(wfn,"blah.molden")
-        print("hello from in here",wfn)
-        ## molden(wfn,filename)
-        ## print(self.wavefunction())
         exdm = 0.0
         return exdm
 
@@ -75,72 +78,7 @@ class XDMDispersion(object):
 ## 
 ## 
 ## def run_gcp(self, func=None, dertype=None, verbose=False):  # dashlvl=None, dashparam=None
-##     """Function to call Grimme's GCP program
-##     https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/gcp/gcp
-##     to compute an a posteriori geometrical BSSE correction to *self* for
-##     several HF, generic DFT, and specific HF-3c and PBEh-3c method/basis
-##     combinations, *func*. Returns energy if *dertype* is 0, gradient
-##     if *dertype* is 1, else tuple of energy and gradient if *dertype*
-##     unspecified. The gcp executable must be independently compiled and
-##     found in :envvar:`PATH` or :envvar:`PSIPATH`. *self* may be either a
-##     qcdb.Molecule (sensibly) or a psi4.Molecule (works b/c psi4.Molecule
-##     has been extended by this method py-side and only public interface
-##     fns used) or a string that can be instantiated into a qcdb.Molecule.
-## 
-##     """
-##     # Create (if necessary) and update qcdb.Molecule
-##     if isinstance(self, Molecule):
-##         # called on a qcdb.Molecule
-##         pass
-##     elif isinstance(self, core.Molecule):
-##         # called on a python export of a psi4.core.Molecule (py-side through Psi4's driver)
-##         self.create_psi4_string_from_molecule()
-##     elif isinstance(self, str):
-##         # called on a string representation of a psi4.Molecule (c-side through psi4.Dispersion)
-##         self = Molecule(self)
-##     else:
-##         raise ValidationError("""Argument mol must be psi4string or qcdb.Molecule""")
-##     self.update_geometry()
-## 
-## #    # Validate arguments
-## #    dashlvl = dashlvl.lower()
-## #    dashlvl = dash_alias['-' + dashlvl][1:] if ('-' + dashlvl) in dash_alias.keys() else dashlvl
-## #    if dashlvl not in dashcoeff.keys():
-## #        raise ValidationError("""-D correction level %s is not available. Choose among %s.""" % (dashlvl, dashcoeff.keys()))
-## 
-##     if dertype is None:
-##         derint, derdriver = -1, 'gradient'
-##     else:
-##         derint, derdriver = parse_dertype(dertype, max_derivative=1)
-## 
-## #    if func is None:
-## #        if dashparam is None:
-## #            # defunct case
-## #            raise ValidationError("""Parameters for -D correction missing. Provide a func or a dashparam kwarg.""")
-## #        else:
-## #            # case where all param read from dashparam dict (which must have all correct keys)
-## #            func = 'custom'
-## #            dashcoeff[dashlvl][func] = {}
-## #            dashparam = dict((k.lower(), v) for k, v in dashparam.iteritems())
-## #            for key in dashcoeff[dashlvl]['b3lyp'].keys():
-## #                if key in dashparam.keys():
-## #                    dashcoeff[dashlvl][func][key] = dashparam[key]
-## #                else:
-## #                    raise ValidationError("""Parameter %s is missing from dashparam dict %s.""" % (key, dashparam))
-## #    else:
-## #        func = func.lower()
-## #        if func not in dashcoeff[dashlvl].keys():
-## #            raise ValidationError("""Functional %s is not available for -D level %s.""" % (func, dashlvl))
-## #        if dashparam is None:
-## #            # (normal) case where all param taken from dashcoeff above
-## #            pass
-## #        else:
-## #            # case where items in dashparam dict can override param taken from dashcoeff above
-## #            dashparam = dict((k.lower(), v) for k, v in dashparam.iteritems())
-## #            for key in dashcoeff[dashlvl]['b3lyp'].keys():
-## #                if key in dashparam.keys():
-## #                    dashcoeff[dashlvl][func][key] = dashparam[key]
-## 
+##
 ##     # TODO temp until figure out paramfile
 ##     allowed_funcs = ['HF/MINIS', 'DFT/MINIS', 'HF/MINIX', 'DFT/MINIX',
 ##         'HF/SV', 'DFT/SV', 'HF/def2-SV(P)', 'DFT/def2-SV(P)', 'HF/def2-SVP',

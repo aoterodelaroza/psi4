@@ -40,11 +40,10 @@ funcs.append({
         "GGA_C_LYP": {}
     },
     "citation":
-    '    A. D. Becke, Phys. Rev. A 38, 3098 (1988).\n' + \
-    '    C. Lee, W. Yang, and R. G. Parr, Phys. Rev. B 37, 785 (1988).\n' + \
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
     '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
     "description":
-    '    BLYP GGA Exchange-Correlation Functional plus XDM dispersion.\n',
+    '    BLYP Exchange-Correlation Functional plus XDM dispersion (GGA).\n',
     "dispersion": {
         "type": "xdm",
         "params": {
@@ -63,10 +62,10 @@ funcs.append({
         "GGA_C_PBE": {}
     },
     "citation":
-    '    J.P. Perdew et. al., Phys. Rev. Lett., 77(18), 3865-3868, 1996.\n' + \
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
     '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
     "description":
-    '    PBE GGA Exchange-Correlation Functional plus XDM dispersion.\n',
+    '    PBE Exchange-Correlation Functional plus XDM dispersion (GGA).\n',
     "dispersion": {
         "type": "xdm",
         "params": {
@@ -76,8 +75,187 @@ funcs.append({
         }
     }
 })
+funcs.append({
+    "name": "PW86PBE-XDM",
+    "x_functionals": {
+        "GGA_X_PW86": {}
+    },
+    "c_functionals": {
+        "GGA_C_PBE": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    PW86PBE Exchange-Correlation Functional plus XDM dispersion (GGA).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.7564,
+            'a2': 1.4545,
+            'vol': 'pw86pbe',
+        }
+    }
+})
+funcs.append({
+    "name": "B3LYP-XDM",
+    "xc_functionals": {
+        "HYB_GGA_XC_B3LYP": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    B3LYP Exchange-Correlation Functional plus XDM dispersion (hybrid).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.6356,
+            'a2': 1.5119,
+            'vol': 'b3lyp',
+        }
+    }
+})
+funcs.append({
+    "name": "B3PW91-XDM",
+    "xc_functionals": {
+        "HYB_GGA_XC_B3PW91": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    B3PW91 Exchange-Correlation Functional plus XDM dispersion (hybrid).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.6002,
+            'a2': 1.4043,
+            'vol': '0.2',
+        }
+    }
+})
+funcs.append({
+    "name": "PBE0-XDM",
+    "xc_functionals": {
+        "HYB_GGA_XC_PBEH": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    PBE0 Exchange-Correlation Functional plus XDM dispersion (hybrid).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.4186,
+            'a2': 2.6791,
+            'vol': 'pbe0',
+        }
+    }
+})
+funcs.append({
+    "name": "CAM-B3LYP-XDM",
+    "xc_functionals": {
+        "HYB_GGA_XC_CAM_B3LYP": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    CAM-B3LYP Exchange-Correlation Functional plus XDM dispersion (rs-hybrid).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.3248,
+            'a2': 2.8607,
+            'vol': 'camb3lyp',
+        }
+    }
+})
+funcs.append({
+    "name": "BHANDHLYP-XDM",
+    "xc_functionals": {
+        "HYB_GGA_XC_BHANDHLYP": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    BHANDHLYP Exchange-Correlation Functional plus XDM dispersion (hybrid).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.5610,
+            'a2': 1.9894,
+            'vol': 'bhah',
+        }
+    }
+})
+funcs.append({
+    "name": "TPSS-XDM",
+    "x_functionals": {
+        "MGGA_X_TPSS": {}
+    },
+    "c_functionals": {
+        "MGGA_C_TPSS": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    TPSS Exchange-Correlation Functional plus XDM dispersion (meta-GGA).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.6612,
+            'a2': 1.5111,
+            'vol': '0.0',
+        }
+    }
+})
+funcs.append({
+    "name": "HSE06-XDM",
+    "xc_functionals": {
+        "HYB_GGA_XC_HSE06": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    HSE06 Exchange-Correlation Functional plus XDM dispersion (rs-hybrid).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.3691,
+            'a2': 2.8793,
+            'vol': '0.0',
+        }
+    }
+})
+funcs.append({
+    "name": "BP86-XDM",
+    "x_functionals": {
+        "GGA_X_B88": {}
+    },
+    "c_functionals": {
+        "GGA_C_P86": {}
+    },
+    "citation":
+    '    A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007).\n' + \
+    '    A. Otero-de-la Roza, E. R. Johnson, J. Chem. Phys. 138, 204109 (2013).\n',
+    "description":
+    '    BP86 Exchange-Correlation Functional plus XDM dispersion (GGA).\n',
+    "dispersion": {
+        "type": "xdm",
+        "params": {
+            'a1': 0.8538,
+            'a2': 0.6415,
+            'vol': '0.0',
+        }
+    }
+})
 
 functional_list = {}
 for functional in funcs:
     functional_list[functional["name"].lower()] = functional
-

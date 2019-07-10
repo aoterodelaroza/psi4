@@ -26,9 +26,14 @@
 # @END LICENSE
 #
 
+import os
+import shutil
+import uuid
+import subprocess
+
 from psi4 import core
 from psi4 import extras
-from psi4.driver.p4util.exceptions import ValidationError, XDMError
+from psi4.driver.p4util.exceptions import *
 
 class XDMDispersion(object):
     """Class for tXDM dispersion calculations
@@ -38,149 +43,97 @@ class XDMDispersion(object):
     def __init__(self, a1=-1.0, a2=0.0, vol=""):
         self.a1 = a1
         self.a2 = a2
-        self.vol = vol
+        self.vol = vol.lower()
         if (not extras.addons("postg")):
             raise XDMError("Cannot find the postg executable for the XDM dispersion correction")
 
     def run_postg(self,wfn=None,derint=0):
         """Calls postg and returns energies and derivatives"""
 
+        # grab xdm parameters
+        (a1,a2,vol) = (self.a1,self.a2,self.vol)
+
         # Validate arguments
         if wfn is None:
             raise ValidationError("Call to run_postg without a wavefunction.")
-        if (self.a1 < 0 or len(self.vol) == 0):
-            raise ValidationError("""Call to run_postg with incorrect parameters a1 = %.4f, a2 = %.4f, vol = %s.""" % (self.a1,self.a2,self.vol))
+        if (a1 < 0 or len(vol) == 0):
+            raise ValidationError("""Call to run_postg with incorrect parameters a1 = %.4f, a2 = %.4f, vol = %s.""" % (a1,a2,vol))
 
-        filename = "blah.molden"
+        # check that the volume token is either one of the postg tokens or a float
+        allowed_vols = ['blyp','b3lyp','bhandhlyp','bhandh','bhah','bhahlyp','camb3lyp','cam-b3lyp','pbe','pbe0','lcwpbe','lc-wpbe','pw86','pw86pbe','b971','b97-1','hf']
+        if vol not in allowed_vols:
+            try:
+                float(vol)
+            except:
+                raise XDMError("""Call to run_postg with invalid volume token: %s""" % vol)
+
+        # Find environment by merging PSIPATH and PATH environment variables
+        lenv = {
+            'PATH': ':'.join([os.path.abspath(x) for x in os.environ.get('PSIPATH', '').split(':') if x != '']) + \
+            ':' + os.environ.get('PATH'),
+            'LD_LIBRARY_PATH': os.environ.get('LD_LIBRARY_PATH')
+        }
+        #   Filter out None values as subprocess will fault on them
+        lenv = {k: v for k, v in lenv.items() if v is not None}
+ 
+        # Setup unique scratch directory and move in (assume we are in psi4)
+        current_directory = os.getcwd()
+        psioh = core.IOManager.shared_object()
+        psio = core.IO.shared_object()
+        os.chdir(psioh.get_default_path())
+        postg_tmpdir = 'psi.' + str(os.getpid()) + '.' + psio.get_default_namespace() + '.postg.' + str(uuid.uuid4())[:8]
+
+        if os.path.exists(postg_tmpdir) is False:
+            os.mkdir(postg_tmpdir)
+            os.chdir(postg_tmpdir)
+   
+        # Write molden file, with no virtual orbitals
+        try:
+            occa = wfn.occupation_a()
+            occb = wfn.occupation_b()
+        except AttributeError as err:
+            os.chdir(current_directory)
+            raise XDMError("The wavefunction passed to run_postg does not have occupation numbers.") from err
+        moldenfile = './tmp.molden'
         mw = core.MoldenWriter(wfn)
-        mw.write(filename, wfn.Ca(), wfn.Cb(), wfn.epsilon_a(), wfn.epsilon_b(), wfn.occupation_a(), wfn.occupation_b(), False)
+        mw.write(moldenfile, wfn.Ca(), wfn.Cb(), wfn.epsilon_a(), wfn.epsilon_b(), occa, occb, False)
+
+        # Call postg program
+        command = ['postg', '%.4f' % a1, '%.4f' % a2, moldenfile, vol]
+        try:
+            child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=lenv)
+        except OSError as e:
+            os.chdir(current_directory)
+            raise XDMError('Error executing postg: %s' % e)
+        out, err = child.communicate()
+        if child.returncode != 0:
+            os.chdir(current_directory)
+            raise XDMError("""Error running postg. Please check the temporary files in directory: %s\n--- Some info about the error from postg follows, maybe ---\n %s""" % (postg_tmpdir, err.decode('ascii')))
+
+        ## xxxx working xxxx ##
+
+        # Clean up files and remove scratch directory
+        os.chdir('..')
+        try:
+            shutil.rmtree(postg_tmpdir)
+        except OSError as err:
+            raise OSError("""Unable to remove postg temporary directory: %s""" % postg_tmpdir) from err
+        os.chdir(current_directory)
 
         exdm = 0.0
         return exdm
 
 ## """Module with functions that interface with postg."""
-## import os
 ## import re
 ## import uuid
-## import shutil
 ## import socket
 ## import subprocess
 ## 
-## try:
-##     from psi4.driver.p4util.exceptions import *
-##     from psi4 import core
-##     isP4regime = True
-## except ImportError:
-##     from .exceptions import *
-##     isP4regime = False
 ## from .util import parse_dertype
 ## from .molecule import Molecule
 ## 
-## 
 ## def run_gcp(self, func=None, dertype=None, verbose=False):  # dashlvl=None, dashparam=None
 ##
-##     # TODO temp until figure out paramfile
-##     allowed_funcs = ['HF/MINIS', 'DFT/MINIS', 'HF/MINIX', 'DFT/MINIX',
-##         'HF/SV', 'DFT/SV', 'HF/def2-SV(P)', 'DFT/def2-SV(P)', 'HF/def2-SVP',
-##         'DFT/def2-SVP', 'HF/DZP', 'DFT/DZP', 'HF/def-TZVP', 'DFT/def-TZVP',
-##         'HF/def2-TZVP', 'DFT/def2-TZVP', 'HF/631Gd', 'DFT/631Gd',
-##         'HF/def2-TZVP', 'DFT/def2-TZVP', 'HF/cc-pVDZ', 'DFT/cc-pVDZ',
-##         'HF/aug-cc-pVDZ', 'DFT/aug-cc-pVDZ', 'DFT/SV(P/h,c)', 'DFT/LANL',
-##         'DFT/pobTZVP', 'TPSS/def2-SVP', 'PW6B95/def2-SVP',
-##         # specials
-##         'hf3c', 'pbeh3c']
-##     allowed_funcs = [f.lower() for f in allowed_funcs]
-##     if func.lower() not in allowed_funcs:
-##         raise Dftd3Error("""bad gCP func: %s. need one of: %r""" % (func, allowed_funcs))
-## 
-##     # Move ~/.dftd3par.<hostname> out of the way so it won't interfere
-##     defaultfile = os.path.expanduser('~') + '/.dftd3par.' + socket.gethostname()
-##     defmoved = False
-##     if os.path.isfile(defaultfile):
-##         os.rename(defaultfile, defaultfile + '_hide')
-##         defmoved = True
-## 
-##     # Find environment by merging PSIPATH and PATH environment variables
-##     lenv = {
-##         'PATH': ':'.join([os.path.abspath(x) for x in os.environ.get('PSIPATH', '').split(':') if x != '']) + \
-##                 ':' + os.environ.get('PATH'),
-##         'LD_LIBRARY_PATH': os.environ.get('LD_LIBRARY_PATH')
-##         }
-##     #   Filter out None values as subprocess will fault on them
-##     lenv = {k: v for k, v in lenv.items() if v is not None}
-## 
-##     # Find out if running from Psi4 for scratch details and such
-##     try:
-##         import psi4
-##     except ImportError as err:
-##         isP4regime = False
-##     else:
-##         isP4regime = True
-## 
-##     # Setup unique scratch directory and move in
-##     current_directory = os.getcwd()
-##     if isP4regime:
-##         psioh = core.IOManager.shared_object()
-##         psio = core.IO.shared_object()
-##         os.chdir(psioh.get_default_path())
-##         gcp_tmpdir = 'psi.' + str(os.getpid()) + '.' + psio.get_default_namespace() + \
-##             '.gcp.' + str(uuid.uuid4())[:8]
-##     else:
-##         gcp_tmpdir = os.path.expanduser('~') + os.sep + 'gcp_' + str(uuid.uuid4())[:8]
-##     if os.path.exists(gcp_tmpdir) is False:
-##         os.mkdir(gcp_tmpdir)
-##     os.chdir(gcp_tmpdir)
-## 
-##     # Write gcp_parameters file that governs cp correction
-## #    paramcontents = gcp_server(func, dashlvl, 'dftd3')
-## #    paramfile1 = 'dftd3_parameters'  # older patched name
-## #    with open(paramfile1, 'w') as handle:
-## #        handle.write(paramcontents)
-## #    paramfile2 = '.gcppar'
-## #    with open(paramfile2, 'w') as handle:
-## #        handle.write(paramcontents)
-## 
-## ###Two kinds of parameter files can be read in: A short and an extended version. Both are read from
-## ###$HOME/.gcppar.$HOSTNAME by default. If the option -local is specified the file is read in from
-## ###the current working directory: .gcppar
-## ###The short version reads in: basis-keywo
-## 
-##     # Write dftd3_geometry file that supplies geometry to dispersion calc
-##     numAtoms = self.natom()
-##     geom = self.save_string_xyz()
-##     reals = []
-##     for line in geom.splitlines():
-##         lline = line.split()
-##         if len(lline) != 4:
-##             continue
-##         if lline[0] == 'Gh':
-##             numAtoms -= 1
-##         else:
-##             reals.append(line)
-## 
-##     geomtext = str(numAtoms) + '\n\n'
-##     for line in reals:
-##         geomtext += line.strip() + '\n'
-##     geomfile = './gcp_geometry.xyz'
-##     with open(geomfile, 'w') as handle:
-##         handle.write(geomtext)
-##     # TODO somehow the variations on save_string_xyz and
-##     #   whether natom and chgmult does or doesn't get written
-##     #   have gotten all tangled. I fear this doesn't work
-##     #   the same btwn libmints and qcdb or for ghosts
-## 
-##     # Call gcp program
-##     command = ['gcp', geomfile]
-##     command.extend(['-level', func])
-##     if derint != 0:
-##         command.append('-grad')
-##     try:
-##         #print('command', command)
-##         dashout = subprocess.Popen(command, stdout=subprocess.PIPE, env=lenv)
-##     except OSError as e:
-##         raise ValidationError('Program gcp not found in path. %s' % e)
-##     out, err = dashout.communicate()
-## 
 ##     # Parse output
 ##     success = False
 ##     for line in out.splitlines():
@@ -190,10 +143,6 @@ class XDMDispersion(object):
 ##             dashd = float(sline[1])
 ##         if re.match('     normal termination of gCP', line):
 ##             success = True
-## 
-##     if not success:
-##         os.chdir(current_directory)
-##         raise Dftd3Error("""Unsuccessful gCP run.""")
 ## 
 ##     # Parse grad output
 ##     if derint != 0:
@@ -234,23 +183,6 @@ class XDMDispersion(object):
 ##             core.print_out(text)
 ##         else:
 ##             print(text)
-## 
-## #    # Clean up files and remove scratch directory
-## #    os.unlink(paramfile1)
-## #    os.unlink(paramfile2)
-## #    os.unlink(geomfile)
-## #    if derint != 0:
-## #        os.unlink(derivfile)
-## #    if defmoved is True:
-## #        os.rename(defaultfile + '_hide', defaultfile)
-## 
-##     # clean up files and remove scratch directory
-##     os.chdir('..')
-##     try:
-##         shutil.rmtree(gcp_tmpdir)
-##     except OSError as err:
-##         raise OSError('Unable to remove gcp temporary directory: {}'.format(gcp_tmpdir)) from err
-##     os.chdir(current_directory)
 ## 
 ##     # return -D & d(-D)/dx
 ##     if derint == -1:

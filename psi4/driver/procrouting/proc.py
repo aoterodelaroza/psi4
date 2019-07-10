@@ -51,6 +51,7 @@ from psi4.driver.p4util.exceptions import ManagedMethodError, PastureRequiredErr
 from .roa import run_roa
 from . import proc_util
 from . import empirical_dispersion
+from . import xdm_dispersion
 from . import dft
 from . import mcscf
 from . import response
@@ -1051,8 +1052,7 @@ def scf_wavefunction_factory(name, ref_wfn, reference, **kwargs):
         wfn._disp_functor = _disp_functor
 
     if superfunc.needs_xdm():
-        if (not extras.addons("postg")):
-            raise XDMError("Cannot find the postg executable for the XDM dispersion correction")
+        wfn.xdm = xdm_dispersion.XDMDispersion(superfunc.xdm_a1(),superfunc.xdm_a2(),superfunc.xdm_vol())
 
     # Set the DF basis sets
     if (("DF" in core.get_global_option("SCF_TYPE")) or

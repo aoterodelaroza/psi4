@@ -74,6 +74,7 @@ void SuperFunctional::common_init() {
     needs_xdm_ = false;
     xdm_a1_ = 0.0;
     xdm_a2_ = 0.0;
+    xdm_vol_ = "0.0";
 
     libxc_xc_func_ = false;
     locked_ = false;
@@ -105,6 +106,7 @@ std::shared_ptr<SuperFunctional> SuperFunctional::XC_build(std::string name, boo
     if (xc_func->needs_xdm()) {
         sup->set_xdm_a1(xc_func->xdm_a1());
         sup->set_xdm_a2(xc_func->xdm_a2());
+        sup->set_xdm_vol(xc_func->xdm_vol());
     }
     sup->add_c_functional(static_cast<std::shared_ptr<Functional>>(xc_func));
     sup->libxc_xc_func_ = true;
@@ -138,6 +140,7 @@ std::shared_ptr<SuperFunctional> SuperFunctional::build_worker() {
         sup->needs_xdm_ = true;
         sup->xdm_a1_ = xdm_a1_;
         sup->xdm_a2_ = xdm_a2_;
+        sup->xdm_vol_ = xdm_vol_;
     }
     if (needs_grac_) {
         sup->needs_grac_ = true;
@@ -313,6 +316,7 @@ void SuperFunctional::print(std::string out, int level) const {
         printer->Printf("   => XDM Dispersion Correction Parameters <=\n\n");
         printer->Printf("    XDM a1              = %14.4E\n", xdm_a1_);
         printer->Printf("    XDM a2 (ang)        = %14.4E\n", xdm_a2_);
+        printer->Printf("    XDM volume token    = %s\n", xdm_vol_.c_str());
         printer->Printf("\n");
     }
 
@@ -378,6 +382,11 @@ void SuperFunctional::set_xdm_a2(double xdm_a2) {
     can_edit();
     needs_xdm_ = true;
     xdm_a2_ = xdm_a2;
+}
+void SuperFunctional::set_xdm_vol(const std::string& vol){ 
+    can_edit();
+    needs_xdm_ = true;
+    xdm_vol_ = vol; 
 }
 void SuperFunctional::set_grac_alpha(double grac_alpha) {
     can_edit();
@@ -609,14 +618,6 @@ void SuperFunctional::allocate() {
         vv_values_["GRID_WX"] = std::make_shared<Vector>("W_X_GRID", max_points_);
         vv_values_["GRID_WY"] = std::make_shared<Vector>("W_Y_GRID", max_points_);
         vv_values_["GRID_WZ"] = std::make_shared<Vector>("W_Z_GRID", max_points_);
-    }
-
-    if (needs_xdm_) {
-        xdm_values_["W0"] = std::make_shared<Vector>("W0", max_points_);
-        xdm_values_["KAPPA"] = std::make_shared<Vector>("KAPPA", max_points_);
-        xdm_values_["GRID_WX"] = std::make_shared<Vector>("W_X_GRID", max_points_);
-        xdm_values_["GRID_WY"] = std::make_shared<Vector>("W_Y_GRID", max_points_);
-        xdm_values_["GRID_WZ"] = std::make_shared<Vector>("W_Z_GRID", max_points_);
     }
 }
 std::map<std::string, SharedVector>& SuperFunctional::compute_functional(

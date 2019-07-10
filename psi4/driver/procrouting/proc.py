@@ -44,7 +44,7 @@ from psi4 import core
 from psi4.driver import p4util
 from psi4.driver import qcdb
 from psi4.driver import psifiles as psif
-from psi4.driver.p4util.exceptions import ManagedMethodError, PastureRequiredError, ValidationError
+from psi4.driver.p4util.exceptions import ManagedMethodError, PastureRequiredError, ValidationError, XDMError
 #from psi4.driver.molutil import *
 # never import driver, wrappers, or aliases into this file
 
@@ -1051,7 +1051,8 @@ def scf_wavefunction_factory(name, ref_wfn, reference, **kwargs):
         wfn._disp_functor = _disp_functor
 
     if superfunc.needs_xdm():
-        wfn.xdm = core.XDMDispersion.build(superfunc.xdm_a1(),superfunc.xdm_a2())
+        if (not extras.addons("postg")):
+            raise XDMError("Cannot find the postg executable for the XDM dispersion correction")
 
     # Set the DF basis sets
     if (("DF" in core.get_global_option("SCF_TYPE")) or
@@ -1073,7 +1074,7 @@ def scf_wavefunction_factory(name, ref_wfn, reference, **kwargs):
         wfn.set_basisset("BASIS_RELATIVISTIC", decon_basis)
 
     # Set the multitude of SAD basis sets
-    if (core.get_option("SCF", "GUESS") == "SAD" or core.get_option("SCF", "GUESS") == "HUCKEL") or superfunc.needs_xdm():
+    if (core.get_option("SCF", "GUESS") == "SAD" or core.get_option("SCF", "GUESS") == "HUCKEL"):
         sad_basis_list = core.BasisSet.build(wfn.molecule(), "ORBITAL",
                                              core.get_global_option("BASIS"),
                                              puream=wfn.basisset().has_puream(),

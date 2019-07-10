@@ -123,14 +123,14 @@ def psi4_which(command, *, return_bool: bool = False, raise_error: bool = False,
 
 
 _addons_ = {
-    "ambit": _CMake_to_Py_boolean("@ENABLE_ambit@"),
-    "chemps2": _CMake_to_Py_boolean("@ENABLE_CheMPS2@"),
-    "dkh": _CMake_to_Py_boolean("@ENABLE_dkh@"),
+    "ambit": _CMake_to_Py_boolean("OFF"),
+    "chemps2": _CMake_to_Py_boolean("OFF"),
+    "dkh": _CMake_to_Py_boolean("OFF"),
     "libefp": which_import("pylibefp", return_bool=True),
-    "erd": _CMake_to_Py_boolean("@ENABLE_erd@"),
-    "gdma": _CMake_to_Py_boolean("@ENABLE_gdma@"),
-    "pcmsolver": _CMake_to_Py_boolean("@ENABLE_PCMSolver@"),
-    "simint": _CMake_to_Py_boolean("@ENABLE_simint@"),
+    "erd": _CMake_to_Py_boolean("OFF"),
+    "gdma": _CMake_to_Py_boolean("OFF"),
+    "pcmsolver": _CMake_to_Py_boolean("OFF"),
+    "simint": _CMake_to_Py_boolean("OFF"),
     "dftd3": psi4_which("dftd3", return_bool=True),
     "cfour": psi4_which("xcfour", return_bool=True),
     "mrcc": psi4_which("dmrcc", return_bool=True),
@@ -140,6 +140,7 @@ _addons_ = {
     "forte": which_import("forte", return_bool=True),
     "snsmp2": which_import("snsmp2", return_bool=True),
     "resp": which_import("resp", return_bool=True),
+    "postg": psi4_which("postg", return_bool=True),
 }
 
 

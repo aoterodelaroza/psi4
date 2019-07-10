@@ -98,6 +98,7 @@ class SuperFunctional {
     bool needs_xdm_;
     double xdm_a1_;
     double xdm_a2_;
+    std::string xdm_vol_;
 
     // => Functional values and partials <= //
     bool libxc_xc_func_;
@@ -192,8 +193,9 @@ class SuperFunctional {
     void set_c_os_alpha(double alpha);
     void set_vv10_b(double b);
     void set_vv10_c(double c);
-    void set_xdm_a1(double a2);
+    void set_xdm_a1(double a1);
     void set_xdm_a2(double a2);
+    void set_xdm_vol(const std::string& vol);
     void set_grac_shift(double grac_shift);
     void set_grac_alpha(double grac_alpha);
     void set_grac_beta(double grac_beta);
@@ -219,6 +221,7 @@ class SuperFunctional {
     double vv10_c() const { return vv10_c_; }
     double xdm_a1() const { return xdm_a1_; }
     double xdm_a2() const { return xdm_a2_; }
+    std::string xdm_vol() const { return xdm_vol_; }
     double grac_shift() const { return grac_shift_; }
     double grac_alpha() const { return grac_alpha_; }
     double grac_beta() const { return grac_beta_; }

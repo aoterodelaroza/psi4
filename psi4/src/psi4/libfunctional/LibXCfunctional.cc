@@ -178,6 +178,7 @@ LibXCFunctional::LibXCFunctional(std::string xc_name, bool unpolarized) {
     needs_xdm_ = false;
     xdm_a1_ = 0.0;
     xdm_a2_ = 0.0;
+    xdm_vol_ = "0.0";
 }
 LibXCFunctional::~LibXCFunctional() { xc_func_end(xc_functional_.get()); }
 std::shared_ptr<Functional> LibXCFunctional::build_worker() {

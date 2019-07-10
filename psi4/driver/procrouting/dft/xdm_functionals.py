@@ -50,6 +50,7 @@ funcs.append({
         "params": {
             'a1': 0.7647,
             'a2': 0.8457,
+            'vol': 'blyp',
         }
     }
 })

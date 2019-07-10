@@ -399,6 +399,7 @@ def build_superfunctional_from_dictionary(func_dictionary, npoints, deriv, restr
         if d_params["type"] == 'xdm':
             sup.set_xdm_a1(d_params["params"]["a1"])
             sup.set_xdm_a2(d_params["params"]["a2"])
+            sup.set_xdm_vol(d_params["params"]["vol"])
         dispersion = d_params
 
     sup.set_max_points(npoints)

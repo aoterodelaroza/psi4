@@ -546,7 +546,8 @@ def scf_finalize_energy(self):
         self.set_variable('CURRENT ENERGY', efpene['total'])
 
     if self.functional().needs_xdm():
-        exdm = self.xdm.compute_energy(self)
+        exdm = 0.0
+        ## exdm = self.xdm.compute_energy(self)
         self.set_energies("EXDM", exdm)
         core.set_variable('DISPERSION CORRECTION ENERGY', exdm)
 

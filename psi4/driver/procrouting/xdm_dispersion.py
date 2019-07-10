@@ -26,6 +26,7 @@
 # @END LICENSE
 #
 
+import re
 import os
 import shutil
 import uuid
@@ -108,10 +109,15 @@ class XDMDispersion(object):
         out, err = child.communicate()
         if child.returncode != 0:
             os.chdir(current_directory)
-            raise XDMError("""Error running postg. Please check the temporary files in directory: %s\n--- Some info about the error from postg follows, maybe ---\n %s""" % (postg_tmpdir, err.decode('ascii')))
+            raise XDMError("""Error running postg. Please check the temporary files in directory: %s\n--- Some info about the error from postg follows, maybe ---\n %s""" % (postg_tmpdir, err.decode('utf-8')))
 
-        ## xxxx working xxxx ##
-
+        # Parse output
+        for line in out.splitlines():
+            line = line.decode('utf-8')
+            if re.match('dispersion energy',line):
+                sline = line.split()
+                exdm = float(sline[2])
+                
         # Clean up files and remove scratch directory
         os.chdir('..')
         try:
@@ -120,7 +126,6 @@ class XDMDispersion(object):
             raise OSError("""Unable to remove postg temporary directory: %s""" % postg_tmpdir) from err
         os.chdir(current_directory)
 
-        exdm = 0.0
         return exdm
 
 ## """Module with functions that interface with postg."""
@@ -134,16 +139,6 @@ class XDMDispersion(object):
 ## 
 ## def run_gcp(self, func=None, dertype=None, verbose=False):  # dashlvl=None, dashparam=None
 ##
-##     # Parse output
-##     success = False
-##     for line in out.splitlines():
-##         line = line.decode('utf-8')
-##         if re.match('  Egcp:', line):
-##             sline = line.split()
-##             dashd = float(sline[1])
-##         if re.match('     normal termination of gCP', line):
-##             success = True
-## 
 ##     # Parse grad output
 ##     if derint != 0:
 ##         derivfile = './gcp_gradient'

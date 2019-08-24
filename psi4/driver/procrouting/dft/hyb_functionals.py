@@ -646,6 +646,53 @@ funcs.append({
     '    BMK Hybrid Meta-GGA XC Functional for kinetics\n',
 })
 
+## new b97 functionals
+funcs.append({
+    "name": "PBEh-B97",
+    "x_functionals": {
+        "GGA_X_PBE": {
+            "alpha": 0.79
+        }
+    },
+    "x_hf": {
+        "alpha": 0.21
+    },
+    "c_functionals": {
+        "GGA_C_MYB97_PBE": {}
+    },
+    "description": '  Erin B97 with PBE enhancement factor\n',
+})
+funcs.append({
+    "name": "B86Bh-B97",
+    "x_functionals": {
+        "GGA_X_B86_MGC": {
+            "alpha": 0.74
+        }
+    },
+    "x_hf": {
+        "alpha": 0.26
+    },
+    "c_functionals": {
+        "GGA_C_MYB97_B86B": {}
+    },
+    "description": '  Erin B97 with B86B enhancement factor\n',
+})
+funcs.append({
+    "name": "B88h-B97",
+    "x_functionals": {
+        "GGA_X_B88": {
+            "alpha": 0.74
+        }
+    },
+    "x_hf": {
+        "alpha": 0.26
+    },
+    "c_functionals": {
+        "GGA_C_MYB97_B88": {}
+    },
+    "description": '  Erin B97 with B88 enhancement factor\n',
+})
+
 functional_list = {}
 for functional in funcs:
     functional_list[functional["name"].lower()] = functional

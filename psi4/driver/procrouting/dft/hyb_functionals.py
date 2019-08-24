@@ -651,11 +651,11 @@ funcs.append({
     "name": "PBEh-B97",
     "x_functionals": {
         "GGA_X_PBE": {
-            "alpha": 0.79
+            "alpha": 0.71
         }
     },
     "x_hf": {
-        "alpha": 0.21
+        "alpha": 0.29
     },
     "c_functionals": {
         "GGA_C_MYB97_PBE": {}
@@ -666,11 +666,11 @@ funcs.append({
     "name": "B86Bh-B97",
     "x_functionals": {
         "GGA_X_B86_MGC": {
-            "alpha": 0.74
+            "alpha": 0.73
         }
     },
     "x_hf": {
-        "alpha": 0.26
+        "alpha": 0.27
     },
     "c_functionals": {
         "GGA_C_MYB97_B86B": {}
@@ -681,11 +681,11 @@ funcs.append({
     "name": "B88h-B97",
     "x_functionals": {
         "GGA_X_B88": {
-            "alpha": 0.74
+            "alpha": 0.75
         }
     },
     "x_hf": {
-        "alpha": 0.26
+        "alpha": 0.25
     },
     "c_functionals": {
         "GGA_C_MYB97_B88": {}

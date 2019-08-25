@@ -693,6 +693,35 @@ funcs.append({
     "description": '  Erin B97 with B88 enhancement factor\n',
 })
 
+# new BR functionals
+funcs.append({
+    "name": "BRPBE",
+    "x_functionals": {
+        ## "MGGA_X_TPSS": {}
+        "MGGA_X_BR89_EXPLICIT": {}
+    },
+    "c_functionals": {
+        "GGA_C_PBE": {}
+    },
+    "description": '  BR exchange with PBE correlation\n',
+})
+funcs.append({
+    "name": "BRPBEh",
+    "x_functionals": {
+        "MGGA_X_BR89_EXPLICIT": {
+            "alpha": 0.80
+        }
+    },
+    "x_hf": {
+        "alpha": 0.20
+    },
+    "c_functionals": {
+        "GGA_C_PBE": {}
+    },
+    "description": '  BR exchange hybrid (20%) with PBE correlation\n',
+})
+
+
 functional_list = {}
 for functional in funcs:
     functional_list[functional["name"].lower()] = functional
